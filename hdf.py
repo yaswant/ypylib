@@ -228,9 +228,13 @@ class h5Parse(object):
         self.groups = []
         self.datasets = []
         self.filename = filename
+        self.h5f = None
         if filename:
             self._filetest()
             self._populate_items()
+
+    def __enter__(self):
+        return self
 
     def set_filename(self, filename):
         """Set or update hdf5 filename"""
@@ -418,7 +422,7 @@ class h5Parse(object):
             # Or in one line
             >>> data = h5_parse('file.h5').get_data('/dataset/path')
         """
-        h5f = h5py.File(self.filename, mode='r')
+        self.h5f = h5py.File(self.filename, mode='r')
         dataset = {}
         if dsname is None:
             if verbose:
@@ -429,14 +433,14 @@ class h5Parse(object):
                 if verbose:
                     print i
                 # dataset[i[0:]] = h5f[i].value
-                dataset[i] = h5f[i].value
+                dataset[i] = self.h5f[i].value
                 # dataset.append({i[1:]: h5f[i].value})
         else:
             if type(dsname) is str:
                 dsname = [dsname]
             for ds in dsname:
-                if ds in h5f:
-                    dataset[ds] = h5f[ds].value
+                if ds in self.h5f:
+                    dataset[ds] = self.h5f[ds].value
                 else:
                     print "**Cant find '{}' in {}**".format(ds, self.filename)
 
@@ -446,7 +450,7 @@ class h5Parse(object):
             #    h5f.close()
             #    sys.exit("Cant find {} in {}".format(dsname, self.filename))
 
-        h5f.close()
+        self.h5f.close()
         return dataset
 
     def imshow(self, dsname, fillvalue=RMDI,
@@ -525,6 +529,11 @@ class h5Parse(object):
         plt.plot(mdata)
         plt.title(dsname)
         plt.show()
+
+    def __exit__(self, type, value, traceback):
+        if self.h5f:
+            self.h5f.close()
+        return isinstance(value, TypeError)
 
 
 # ----------------------------------------------------------------------------

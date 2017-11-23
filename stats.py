@@ -12,30 +12,35 @@ from random import randint
 # import matplotlib.pyplot as plt
 
 
-def stat2(x, y):
+def stat2(x, y, lognormal=False):
     """
     Statistical comparison between two series.
 
     For verification of prediction against truth use x as truth and y as
     predicted variable.
 
+    Note:
+        - Multi-dimensional input arrays are flattened
+        - Invalid numbers are removed
+
     Parameters
     ----------
-    x : array of numbers
+    x : array of numbers, reference
         independent or truth variable containing series of points.
-        multi-dimensional arrays will be flattened
-    y : array of numbers
+    y : array of numbers, predicted
         dependent or predicted variable containing series of points.
-        multi-dimensional arrays will be flattened
+        Multi-dimensional arrays will be flattened
+    lognormal: bool, optional
+        Not implemented
 
     Returns
     -------
     dict
         dictionary containing statistical metrics (min, max, median, variance,
         skewness, kurtosis) for each series and bias, rmse, urmse,
-        fge, slope, stderr for slope, intercept, correlation, p-value,
-        rank correlation and p-value between x and y, and counts for number
-        of points used in cross-comparison.
+        fge, slope, stderr for slope, intercept, skill score, correlation,
+        p-value, rank correlation and p-value between x and y, and counts for
+        number of points used in cross-comparison.
 
     """
     # TODO
@@ -64,31 +69,25 @@ def stat2(x, y):
     rmse = np.sqrt(np.mean((y - x)**2))
     bias = np.mean(y - x)
 
-    return dict(
-        x_min=xd[1][0],
-        x_max=xd[1][1],
-        x_var=xd[3],
-        x_skew=xd[4],
-        x_kurt=xd[5],
-        x_med=np.median(x),
-        y_min=yd[1][0],
-        y_max=yd[1][0],
-        y_var=yd[3],
-        y_skew=yd[4],
-        y_kurt=yd[5],
-        y_med=np.median(y),
-        bias=bias,
-        rmse=rmse,
-        urmse=np.sqrt(rmse**2 - bias**2),
-        fge=2.0 * np.mean(np.abs((y - x) / (y + x))),
-        spearman_r=rs_p[0],
-        spearman_p=rs_p[1],
-        slope=fit[0],
-        intercept=fit[1],
-        r_value=fit[2],
-        p_value=fit[3],
-        std_err=fit[4],
-        count=xd[0])
+    return {
+        'x_min': xd[1][0], 'x_max': xd[1][1], 'x_med': np.median(x),
+        'x_avg': xd[2], 'x_var': xd[3], 'x_skew': xd[4], 'x_kurt': xd[5],
+        'y_min': yd[1][0], 'y_max': yd[1][0], 'y_med': np.median(y),
+        'y_avg': yd[2], 'y_var': yd[3], 'y_skew': yd[4], 'y_kurt': yd[5],
+        'bias': bias,                           # mean bias
+        'rmse': rmse,                           # RMSE
+        'urmse': np.sqrt(rmse**2 - bias**2),    # unbiased RMSE
+        'fge': 2.0 * np.mean(np.abs((y - x) / (y + x))),
+        'r_spearman': rs_p[0],          # Rank correlation (Spearman)
+        'p_spearman': rs_p[1],          # p-value for Rank correlation
+        'slope': fit[0],                # Slope of linear fit
+        'intercept': fit[1],            # intercept og linear fit
+        'r_value': fit[2],              # Linear correlation (Pearson)
+        'p_value': fit[3],              # p-value for Linear correlation
+        'std_err': fit[4],              # Error of the estimated slope
+        'ss': 1 - (rmse**2 / xd[3]),    # Murphy Skill Score
+        'count': xd[0]                  # Number of pairs
+    }
 
 
 def bin_xyz(x, y, z, delta=(1., 1.), limit=None, globe=False, order=False):
