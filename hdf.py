@@ -2,7 +2,6 @@
 Created on 29 Jun 2015
 
 :author: yaswant.pradhan
-:copyright: Crown copyright. Met Office
 """
 from __future__ import print_function
 from future.utils import iteritems
@@ -760,7 +759,7 @@ h5_parse = h5Parse
 
 if __name__ == '__main__':
 
-    h5f = '/scratch/fra6/MSG/slotstores/MSG_201706280800.h5'
+    h5f = 'slotstores/MSG_201706280800.h5'
 #     h5Parse(h5f).get_data('MSG/Ch06/BT')
 
 #     h5Parse(h5f).imshow('MSG/Ch09/BT', cmap='Spectral')
@@ -770,15 +769,15 @@ if __name__ == '__main__':
 
     # d.imshow('MSG/Ch09/BT', flipx=True, flipy=True)  # , cmap='Spectral_r')
     # Testing
-#     h4f = '/data/local/fra6/MODIS_c6c5_comparison/MODIS_SCI_C6/' + \
+#     h4f = '/MODIS_c6c5_comparison/MODIS_SCI_C6/' + \
 #           'MYD04_L2/2016/162/MYD04_L2.A2016162.1045.006.2016165154520.hdf'
-#     h4f = '/scratch/frmo/Lidar/CALIPSO/' + \
+#     h4f = 'Lidar/CALIPSO/' + \
 #           'CAL_LID_L15_Exp-Beta-V3-40.2017-06-19T21-00-00ZD.hdf'
-#     h5f = '/data/local/fra6/sample_data/slotstores/MSG_201202151600_lite.h5'
-#     h5f = '/data/local/fra6/sample_data/ncfile/' + \
+#     h5f = 'sample_data/slotstores/MSG_201202151600_lite.h5'
+#     h5f = 'sample_data/ncfile/' + \
 #           'W_XX-EUMETSAT-Darmstadt,SOUNDING+SATELLITE,' + \
 #           'METOPA+GOME_C_EUMC_20170629032654_55485_eps_o_pmap_l2.nc'
-#     h5f = '/scratch/frmo/Lidar/CATS/' + \
+#     h5f = 'Lidar/CATS/' + \
 #           'CATS_L2O_N-M7.2-V2-TE_05kmNRT.2017-06-13T06-20-31T07-05-53UTC.hdf5'
 
     # print d.items

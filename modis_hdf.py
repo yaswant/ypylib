@@ -4,7 +4,6 @@ MODIS Level 2 download, writecsv/netcdf and plotting tool
 Created on 05 Feb 2016.
 
 :author: yaswant.pradhan
-:copyright: Crown copyright. Met Office.
 """
 import os
 import socket
@@ -33,7 +32,7 @@ if 'spice' in socket.gethostname() or os.getenv('DISPLAY') is None:
 # Include Lato Font paths for plot titles
 # =============================================================================
 exfs = r'/usr/lib/rstudio/resources/presentation/revealjs/fonts'
-lp = exfs if os.path.exists(exfs) is True else r'/data/users/fra6/Fonts'
+lp = exfs if os.path.exists(exfs) is True else r'$DATADIR/Fonts'
 Lato = [lp + '/Lato-' + str(i) for i in ['Bold.ttf', 'Regular.ttf']]
 LatoB = fm.FontProperties(fname=Lato[0])
 LatoR = fm.FontProperties(fname=Lato[1])

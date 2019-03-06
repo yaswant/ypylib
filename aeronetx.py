@@ -1,10 +1,8 @@
 """
 :Module: ypylib.aeronetx
-:File: /net/home/h05/fra6/PyWorkspace/ypy/ypylib/aeronetx.py
 Created on 20 Jan 2017 11:12:30
 
-:author: yaswant.pradhan (fra6)
-:copyright: British Crown Copyright 2017, Met Office
+:author: yaswant.pradhan
 """
 import os
 import linecache

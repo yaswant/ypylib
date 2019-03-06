@@ -520,7 +520,7 @@ def plot_sataod_test(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
 def plot_sataod_arabian_peninsula():
     from ypylib.utils import seqdate
     from ImageMetaTag import savefig
-    save_dir = '/scratch/fra6/dust/20150820-20150920'
+    save_dir = '$SCRATCH/dust/20150820-20150920'
 
     for date in seqdate('2015-08-20', '2015-09-20',
                         in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
@@ -606,7 +606,6 @@ def ex_crete_dust():
         gspacing=(5, 5),
         title='MODIS Aqua+Terra aerosol optical depth (DT+DB) on ' + date,
         cb_on=True, cb_title='AOD at 550nm []')
-    # plt.savefig('/home/h05/fra6/MODISAOD_Crete_' + date + '.png')
     return plt
 
 

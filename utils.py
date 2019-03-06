@@ -48,8 +48,6 @@ log.basicConfig(
 
 __version__ = "version"
 __author__ = "Yaswant Pradhan"
-__email__ = "yaswant.pradhan@metoffice.gov.uk"
-__copyright__ = "(c) Crown copyright 2019, the Met Office."
 
 
 class Convert(object):

@@ -1,11 +1,9 @@
 #!/usr/bin/env python2.7
 '''
 :Module: ypylib.pmap_l2
-:File: /net/home/h05/fra6/PyWorkspace/ypy/ypylib/pmap_l2.py
 Created on 7 Apr 2016 14:39:14
 
-:author: yaswant.pradhan (fra6)
-:copyright: British Crown Copyright 2016, Met Office
+:author: yaswant.pradhan
 
 '''
 
@@ -25,7 +23,7 @@ from ypylib.stats import bin_xyz
 # Include Lato Font paths for plot titles
 # =============================================================================
 exfs = r'/usr/lib/rstudio/resources/presentation/revealjs/fonts'
-lp = exfs if os.path.exists(exfs) is True else r'/data/users/fra6/Fonts'
+lp = exfs if os.path.exists(exfs) is True else r'$DATADIR/Fonts'
 Lato = [lp + '/Lato-' + str(i) for i in ['Bold.ttf', 'Regular.ttf']]
 LatoB = fm.FontProperties(fname=Lato[0])
 LatoR = fm.FontProperties(fname=Lato[1])
@@ -42,7 +40,7 @@ class Level2Files(object):
         '''
         self.files = []
         self.date = kw.get('date', dt.today().strftime('%Y%m%d'))
-        self.local = '/scratch/fra6/PMAP/' + self.date
+        self.local = '$SCRATCH/PMAP/' + self.date
         self.sat = kw.get('sat', 'METOPA')
         self.daytitle = None
         self.daybase = None
@@ -182,5 +180,5 @@ class Level2Files(object):
 
 if __name__ == '__main__':
     # Level2Files().plotDailyAod(
-    #     sat='METOPA', filepath='/data/local/fra6/Data/Aerosol/PMAP/20160408')
+    #     sat='METOPA', filepath='$DATADIR/Data/Aerosol/PMAP/20160408')
     pass

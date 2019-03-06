@@ -28,7 +28,7 @@ def plot_c6_granules(filelist=None, **kw):
     product = kw.get('product', 'MYD04_L2')
     if filelist is None:
         l2path = kw.get(
-            'l2path', os.path.join('/data/users/fra6/MODIS_NRT_C6/', product,
+            'l2path', os.path.join('$DATADIR/MODIS_NRT_C6/', product,
                                    dt.utcnow().strftime('%Y/%j')))
         filelist = glob.glob(os.path.join(l2path, '*.hdf'))
         # print filelist
@@ -141,6 +141,5 @@ def main():
     print "L2 file location:" + l2.local
 
 if __name__ == '__main__':
-    # plot_c6_granules(l2path='/data/local/fra6/MODIS_SCI_C6/MYD04_L2/2016/038')
     # plot_c6_granules(fieldname='Deep_Blue_Aerosol_Optical_Depth_550_Land_Best_Estimate')
     plot_c6_granules()

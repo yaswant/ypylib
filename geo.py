@@ -1,9 +1,7 @@
 #!/usr/bin/env python2.7
 """
 Created on 29 Jun 2015
-
-:author: fra6 (yaswant.pradhan)
-:copyright: Crown copyright. Met Office
+:author: yaswant.pradhan
 """
 from __future__ import print_function
 import os
@@ -1090,7 +1088,7 @@ if __name__ == "__main__":
     # lon_shift = shiftlon(lon, lon_0)
     # print "original lon:", lon
     # print " shifted lon:", lon_shift
-    h5f = '/data/local/fra6/sample_data/slotstores/MSG_201202151600_lite.h5'
+    h5f = '$SCRATCH/sample_data/slotstores/MSG_201202151600_lite.h5'
     msg = MSG()
 #     f = msg.geo2pix([0, 2], [0, 10])
 #     print f[0], f[1]

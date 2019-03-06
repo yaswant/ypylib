@@ -4,7 +4,6 @@ Interactive dialog to select file(s).
 Created on 29 Jun 2015
 
 :author: yaswant.pradhan
-:copyright: Crown copyright. Met Office
 '''
 
 from os import getcwd
