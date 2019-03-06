@@ -40,20 +40,22 @@ LatoR = fm.FontProperties(fname=Lato[1])
 
 
 class Level2Files:
-    '''MODIS aerosol Level-2 hdf read/write/plot module.
-
-    Kwargs:
-     * collection (str) MODIS collection
-     * nrt (bool) Option for Near-real-time data
-     * date (str) Date in YYYYmmdd form (def: current date)
-     * product (str) MODIS level2 product code (def: MYD04_L2 ie aerosol)
-     * username (str) username for NRT data access
-     * password (str) password for NRT data access
-     * local (str) Local path to store level2 files. Only updated via the
-       download() method.
+    '''
+    MODIS aerosol Level-2 hdf read/write/plot module.
     '''
 
     def __init__(self, collection=6, nrt=False, **kw):
+        """
+        Kwargs:
+        * collection (str) MODIS collection
+        * nrt (bool) Option for Near-real-time data
+        * date (str) Date in YYYYmmdd form (def: current date)
+        * product (str) MODIS level2 product code (def: MYD04_L2 ie aerosol)
+        * username (str) username for NRT data access
+        * password (str) password for NRT data access
+        * local (str) Local path to store level2 files. Only updated via the
+          download() method.
+       """
         self.files = []
         self.remote = None
         self.local = None
@@ -67,65 +69,60 @@ class Level2Files:
         self.product = kw.get('product', 'MYD04_L2')
         self.username = kw.get('username', None)
         self.password = kw.get('password', None)
-        self.c6nrt = r'nrt3.modaps.eosdis.nasa.gov/allData/6'
-        self.c6sci = r'ladsftp.nascom.nasa.gov/allData/6'
+        self.c6nrt = r'nrt3.modaps.eosdis.nasa.gov/allData/61'
+        self.c6sci = r'ladsftp.nascom.nasa.gov/allData/61'
         self.c5nrt = r'nrt1.modaps.eosdis.nasa.gov/allData/1'
         self.c5sci = r'ladsftp.nascom.nasa.gov/allData/51'
-        self.aodfields = kw.get(
-                'aodfields',
-                ['Longitude', 'Latitude', 'Scan_Start_Time',
-                 'AOD_550_Dark_Target_Deep_Blue_Combined',
-                 'AOD_550_Dark_Target_Deep_Blue_Combined_QA_Flag'])
+        self.aodfields = kw.get('aodfields', [
+            'Longitude', 'Latitude', 'Scan_Start_Time',
+            'AOD_550_Dark_Target_Deep_Blue_Combined',
+            'AOD_550_Dark_Target_Deep_Blue_Combined_QA_Flag'])
 
     def __enter__(self):
         return self
 
-# =============================================================================
-# Convert date string from YYYYmmdd to YYYY/jjj
-# =============================================================================
     def dt2yjd(self, date=None):
-        '''Convert YYYYmmdd to YYYY/jjj format. This function is kept here
-        because of its relevance to MODIS Level2 file structure, but can be
-        used stand-alone.
+        """
+        Convert date string from YYYYmmdd to YYYY/jjj form.
+        This function is kept here because of its relevance to MODIS
+        Level2 file structure, but can be used stand-alone.
 
         Kwargs:
          * date (str) Date in YYYYmmdd. This argument overrides self.date value
 
         Returns:
          * year/day-of-year (str) in 'YYY/jjj' format.
-        '''
+        """
         if date is None:
             date = self.date
         dtobj = dt.strptime(date, '%Y%m%d')
         return(dtobj.strftime('%Y/%j'))
 
-
-# =============================================================================
-# Convert MODIS scan time in elapsed seconds to datetime object
-# =============================================================================
     def et2dt(self, elapsed_seconds):
-        '''Returns date and time from MODIS Scan start time which is measured
+        """
+        Convert MODIS scan time in elapsed seconds to datetime object
+
+        Returns date and time from MODIS Scan start time which is measured
         in seconds since 1993-1-1 00:00:00.0 0.
 
         Args:
          * elapsed_seconds (real) Elapsed seconds since 1993-1-1
-        '''
+        """
         base_time = dt(1993, 1, 1, 0, 0, 0)
         return base_time + td(seconds=elapsed_seconds)
 
-
-# =============================================================================
-# Get MODIS Level-2 NRT data access credential for FTP transfer
-# =============================================================================
     def getCredential(self, profile=None):
-        '''Get eosdis.nasa.gov. user credentials for nrt data access.
+        """
+        Get MODIS Level-2 NRT data access credential for FTP transfer
+
+        Get eosdis.nasa.gov. user credentials for nrt data access.
         This is read from a text file "$HOME/.eosdis.nasa.gov/profile" where
         the user credentials are stored in "username:password" form as the
         first line.
 
         Kwargs:
          * profile (str) full path of eosdis user credential file
-        '''
+        """
         if (profile is None):
             profile = os.path.join(os.environ['HOME'],
                                    r'.eosdis.nasa.gov/profile')
@@ -139,26 +136,23 @@ class Level2Files:
 
             return [self.username, self.password]
 
-
-# =============================================================================
-# Construct URL server path for Level-2 file transfer
-# =============================================================================
     def getUrl(self):
-        '''Get parsed FTP URL for MODIS Level2 nrt or Science product path.
+        """
+        Construct URL server path for Level-2 file transfer.
+
+        Get parsed FTP URL for MODIS Level2 nrt or Science product path.
         Note nrt products may not be available on the server for all previous
         dates.
-        '''
+        """
         if (self.nrt is True):
             self.getCredential()
 
         if (self.collection == 6):
             if (self.nrt is True):
                 server = self.c6nrt
-                temp = '{0}{1}:{2}@{3}'.format('ftp://',
-                                               base64.b64decode(self.username),
-                                               base64.b64decode(self.password),
-                                               server)
-
+                temp = '{0}{1}:{2}@{3}'.format(
+                    'ftp://', base64.b64decode(self.username),
+                    base64.b64decode(self.password), server)
             else:
                 server = self.c6sci
                 temp = '{0}{1}'.format('ftp://', server)
@@ -166,10 +160,9 @@ class Level2Files:
         elif (self.collection == 5):
             if (self.nrt is True):
                 server = self.c5nrt
-                temp = '{0}{1}:{2}@{3}'.format('ftp://',
-                                               base64.b64decode(self.username),
-                                               base64.b64decode(self.password),
-                                               server)
+                temp = '{0}{1}:{2}@{3}'.format(
+                    'ftp://', base64.b64decode(self.username),
+                    base64.b64decode(self.password), server)
             else:
                 server = self.c5sci
                 temp = '{0}{1}'.format('ftp://', server)
@@ -180,18 +173,15 @@ class Level2Files:
         url = '/'.join([temp, self.product, self.dt2yjd(self.date)])
         return url
 
-
-# =============================================================================
-# Download Level-2 filed from NASA server
-# =============================================================================
     def download(self, source=None, destination=None, skip_download=False):
-        '''Download MODIS Level 2 files.
+        """
+        Download MODIS Level 2 files from NASA server.
 
         Kwargs:
          * source (str, optional) Full FTP source for MODIS level-2 data to
            override default settings
          * destination (str, optional) Full local path to save the level2 files
-        '''
+        """
 
         url = self.getUrl() if source is None else source
         if self.nrt is True:
@@ -259,13 +249,12 @@ class Level2Files:
             self.status[0] = -1
             return(self.status[0])
 
-
-# =============================================================================
-# Concatenate level-2 swath files into single vector array
-# =============================================================================
     def consolidateDailyAod(self, filepath=None, valid_time=['0000', '2400'],
                             skip_download=False):
-        '''Concatenate AOD data from available 5 minute swath files in to
+        """
+        Concatenate level-2 swath files into single vector array.
+
+        Concatenate AOD data from available 5 minute swath files in to
         single array.
 
         Kwargs:
@@ -274,7 +263,7 @@ class Level2Files:
         Returns:
          * consolidated arrays (1D) of: scan_time, longitude, latitude, aod550,
            quality_indicator
-        '''
+        """
 
         # Download files
         if skip_download is False:
@@ -292,8 +281,8 @@ class Level2Files:
         allfiles = glob.glob('/'.join([self.local, '*.hdf']))
         hdfiles = []
         for k in allfiles:
-            if (int(k.split('.')[2]) >= int(valid_time[0])
-                    and int(k.split('.')[2]) <= int(valid_time[1])):
+            if (int(k.split('.')[2]) >= int(valid_time[0]) and
+                    int(k.split('.')[2]) <= int(valid_time[1])):
                 hdfiles.append(k)
 
         # hdfiles = glob.glob('/'.join([self.local, '*.hdf']))
@@ -307,19 +296,22 @@ class Level2Files:
 
             if self.collection == 6:
                 for hdfi in hdfiles:
-                    lon, lat, time, aodc, qf = get_sd(FILENAME=hdfi,
-                                                      SDSNAME=self.aodfields,
-                                                      QUIET=True)
-                    aod = aodc.get()
-                    fill = aodc.getfillvalue()
-                    scale = aodc.scale_factor
-                    offset = aodc.add_offset
-                    w = np.where(aod > fill)
-                    clon.append(lon.get()[w])
-                    clat.append(lat.get()[w])
-                    ctime.append(time.get()[w])
-                    cqf.append(qf.get()[w])
-                    caod.append(scale * aod[w] + offset)
+                    try:
+                        lon, lat, time, aodc, qf = get_sd(
+                            FILENAME=hdfi, SDSNAME=self.aodfields, QUIET=True)
+                        aod = aodc.get()
+                        fill = aodc.getfillvalue()
+                        scale = aodc.scale_factor
+                        offset = aodc.add_offset
+                        w = np.where(aod > fill)
+                        clon.append(lon.get()[w])
+                        clat.append(lat.get()[w])
+                        ctime.append(time.get()[w])
+                        cqf.append(qf.get()[w])
+                        caod.append(scale * aod[w] + offset)
+                    except:
+                        os.remove(hdfi)
+
             elif self.collection == 5:
                 if len(self.aodfields) < 6:
                     self.aodfields[3:5] = [
@@ -366,15 +358,14 @@ class Level2Files:
             z[4] = 'SCI'
         self.daytitle = '.'.join([z[i] for i in (0, 1, 3, 4)])
         self.daybase = '.'.join([z[i] for i in (0, 1, 2, 3, 4)])
-        print ' done'
+        print ' done.'
         return ctime, clon, clat, caod, cqf
 
-
-# =============================================================================
-# Write Level-2 AOD from hdf into text CSV file (lon,lat,time,aod,quality_flag
-# =============================================================================
     def writecsvAod(self, hdfile, csvfile=None, deletehdf=False):
-        '''Read AOD dataset from MODIS c6 hdf and write output to a csv file.
+        """
+        Read AOD dataset from MODIS c6 hdf and write output to a csv file.
+
+        (lon,lat,time,aod,quality_flag).
 
         Args:
          * hdfile (str) Level 2 MODIS-C6 AOD hdf filename
@@ -382,7 +373,7 @@ class Level2Files:
         Kwargs:
          * csvfile (str) Output csv filename
          * deletehdf (bool) Remove hdf file after csv write
-        '''
+        """
 
         if csvfile is None:
                 csvfile = os.path.splitext(hdfile)[0] + '.AOD550.csv'
@@ -425,25 +416,22 @@ class Level2Files:
             if (deletehdf is True):
                 os.remove(hdfile)
 
-
-# =============================================================================
-# Write daily consolidated aod data to netcdf
-# =============================================================================
     def writencDailyAod(self, ncfile=None, filepath=None,
                         download=True, **kw):
-        '''Write daily consolidated MODIS AOD data to netCDF file.
+        """
+        Write daily consolidated MODIS AOD data to netCDF file.
 
         Kwargs:
          * ncfile (str) output netcdf filename
          * filepath (str) override default level 2 file path
          * format (str) netcdf format, default: NETCDF4
-        '''
+        """
         from netCDF4 import Dataset
         ncformat = kw.get('format', 'NETCDF4')
         skip = not download
 
-        time, lon, lat, aod, qf = self.consolidateDailyAod(filepath=filepath,
-                                                           skip_download=skip)
+        time, lon, lat, aod, qf = self.consolidateDailyAod(
+            filepath=filepath, skip_download=skip)
 
         if self.status[1] != 0:
             return -1
@@ -487,16 +475,16 @@ class Level2Files:
             'micron for land and ocean'
         aods.standard_name = 'atmosphere_optical_thickness_due_to_aerosol'
         aods.units = '1'
-        aods.valid_range = [-0.1, 5]
+        aods.valid_range = (-0.1, 5)
         qfs = nc.createVariable(
             'quality_flag', 'h', 't', zlib=True, least_significant_digit=1)
         qfs.long_name = 'Combined Dark Target, Deep Blue Aerosol ' + \
             'Confidence Flag'
-        qfs.flag_values = [0, 1, 2, 3]
+        qfs.flag_values = (0, 1, 2, 3)
         qfs.flag_meanings = [
             'No Confidence (or fill), Marginal, ' + 'Good, Very Good']
         qfs.units = '1'
-        qfs.valid_range = [0, 3]
+        qfs.valid_range = (0, 3)
         if self.collection == 5:
             qfs.comment = 'C5 Quality_Assurance_Land are encoded 8-bit ' + \
                 'data. Decode and combine 1st and 2nd bits to ' + \
@@ -510,19 +498,17 @@ class Level2Files:
         aods[:] = aod
         qfs[:] = qf
         nc.close()
-        print dt.utcnow().strftime('%T') + ' done.'
+        print dt.utcnow().strftime('%T') + ' Done.'
 
-# =============================================================================
-# Write daily consolidated aod data to netcdf
-# =============================================================================
     def writeh5DailyAod(self, h5file=None, filepath=None, download=True):
-        '''Write daily consolidated MODIS AOD data to HDF5 file.
-        '''
+        """
+        Write daily consolidated MODIS AOD data to HDF5 file.
+        """
         import h5py
         skip = not download
+        time, lon, lat, aod, qf = self.consolidateDailyAod(
+            filepath=filepath, skip_download=skip)
 
-        time, lon, lat, aod, qf = self.consolidateDailyAod(filepath=filepath,
-                                                           skip_download=skip)
         if self.status[1] != 0:
             return -1
         shp = np.shape(time)  # shape
@@ -575,7 +561,7 @@ class Level2Files:
             'Confidence Flag'
         qfs.attrs['flag_values'] = [0, 1, 2, 3]
         qfs.attrs['flag_meanings'] = [
-            'No Confidence (or fill), Marginal, '+'Good, Very Good']
+            'No Confidence (or fill), Marginal, ' + 'Good, Very Good']
         qfs.attrs['units'] = '1'
         qfs.attrs['valid_range'] = [0, 3]
         if self.collection == 5:
@@ -592,12 +578,11 @@ class Level2Files:
         aods[:] = aod
         qfs[:] = qf
         fid.close()
-        print dt.utcnow().strftime('%T') + ' done.'
+        print dt.utcnow().strftime('%T') + ' Done.'
 
-
-# =============================================================================
-# Plot daily consolidated AOD
-# =============================================================================
+    # -------------------------------------------------------------------------
+    # Plot daily consolidated AOD
+    # -------------------------------------------------------------------------
     def plotDailyAod(self, rebin=(0.5, 0.5), figsize=(8, 5),
                      valid_time=['0000', '2400'],
                      fieldname='AOD_550_Dark_Target_Deep_Blue_Combined',
@@ -632,7 +617,7 @@ class Level2Files:
             ' Binning data to ' + str(rebin[0]).strip() + 'deg grid...',
         gaod, glon, glat = bin_xyz(
             lon, lat, aod, delta=rebin, globe=True, order=True)
-        print 'done'
+        print 'done.'
 
         print dt.utcnow().strftime('%T') + ' Preparing figure...'
         lons, lats = np.meshgrid(glon, glat)
@@ -691,10 +676,9 @@ class Level2Files:
         print dt.utcnow().strftime('%T') + ' Saved image ' + pngfile
         # print dt.utcnow().strftime('%T') + ' done.'
 
-
-# =============================================================================
-#    Exit
-# =============================================================================
+    # -------------------------------------------------------------------------
+    #    Exit
+    # -------------------------------------------------------------------------
     def __exit__(self, exc_type, exc_value, traceback):
         for fi in self.files:
             os.unlink(fi)

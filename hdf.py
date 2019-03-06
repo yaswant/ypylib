@@ -4,11 +4,13 @@ Created on 29 Jun 2015
 :author: yaswant.pradhan
 :copyright: Crown copyright. Met Office
 """
+from __future__ import print_function
+from future.utils import iteritems
 import os
 import numpy as np
 import h5py
-from ypylib.geo import MSG
-from ypylib import dialog
+from ypylib.utils import dialog_pickfiles, log
+# from ypylib import dialog
 try:
     from pyhdf.HDF import HDF
     from pyhdf.SD import SD, SDC
@@ -61,7 +63,8 @@ class h4Parse(object):
 
         try:
             h4 = SD(self.filename, mode=SDC.READ)
-            self.sds = sorted(h4.datasets().keys())
+            # self.sds = sorted(h4.datasets().keys())
+            self.sds = sorted(list(h4.datasets()))  # 2 & 3
             self.attr.append(h4.attributes())
             for k, v in sorted(h4.datasets().viewitems()):
                 self.items.append((k, v[1]))
@@ -100,6 +103,7 @@ class h4Parse(object):
             sds = dict.fromkeys(fieldnames, {})
             for key in sds:
                 attrs = h4.select(key).attributes()
+                # print(attrs)
                 if sclinfo:
                     attrs[sclinfo] = h4.attributes()[sclinfo]
 
@@ -157,11 +161,11 @@ class h4Parse(object):
         Not a general purpose method, so should be used with caution.
         """
         temp = self.get_sds(fieldnames)
-        print fieldnames
+        print(fieldnames)
         # print temp[fieldnames].keys()
         # print dir(temp)
         # print temp.keys()
-        scaled = dict.fromkeys(temp.keys(), None)
+        scaled = dict.fromkeys(list(temp), None)
         fillvalue = {}
         for k in scaled:
             # see h4.attributes()['Slope_and_Offset_Usage']
@@ -183,7 +187,7 @@ class h5Parse(object):
     """
     Represents structure of a single (simple) HDF5 file.
 
-    Last update: Jun 2017 yaswant.pradhan
+    Last update: June 2017 yaswant.pradhan
 
     TODO:
         - test with complex HDF5 files.
@@ -277,7 +281,7 @@ class h5Parse(object):
         self.datasets = sorted(self.datasets)
         if self.verbose:
             for item in self.items:
-                print item
+                print(item)
 
     def _print_items(self, name, obj):
         """
@@ -290,22 +294,23 @@ class h5Parse(object):
 
         """
         if isinstance(obj, h5py.Group):
-            print name
+            print(name)
             self.items.append(obj.name)
         elif isinstance(obj, h5py.Dataset):
-            print name, obj.shape, obj.dtype
+            print(name, obj.shape, obj.dtype)
             self.datasets.append(name)
             self.items.append(obj.name)
         # and attributes
-        for key, val in obj.attrs.iteritems():
-            print "    %s: %s" % (key, val)
+        # for key, val in obj.attrs.iteritems():
+        for key, val in iteritems(obj.attrs):
+            print("    %s: %s" % (key, val))
 
     def _print_h5_dsets(self, obj, offset=''):
         """Print data structure of a h5/nc4 file."""
 
         if isinstance(obj, h5py.File):
             if self.verbose is True:
-                print obj.file, '(File)', obj.name
+                print(obj.file, '(File)', obj.name)
         elif isinstance(obj, h5py.Group) or \
             isinstance(obj, h5py.SoftLink) or \
             isinstance(obj, h5py.ExternalLink) or \
@@ -314,20 +319,21 @@ class h5Parse(object):
         elif isinstance(obj, h5py.Dataset):
             # self.items.append(obj.name)
             if self.verbose is True:
-                print obj.name, "\t", obj.shape, obj.dtype
+                print(obj.name, "\t", obj.shape, obj.dtype)
         else:
-            print 'WARNING: Unknown item in HDF5 file', obj.name
+            print('WARNING: Unknown item in HDF5 file', obj.name)
             # sys.exit("Execution terminated.")
             raise Exception
 
         if isinstance(obj, h5py.File) or isinstance(obj, h5py.Group):
-            for _key, val in sorted(dict(obj).iteritems()):
+            # for _key, val in sorted(dict(obj).iteritems()):
+            for _key, val in sorted(iteritems(dict(obj))):
                 # if self.verbose is True: print offset,
                 # self._print_h5_dsets(val, offset + '')
                 try:
                     self._print_h5_dsets(val, offset + '')
                 except UserWarning:
-                    print "** Skipping: {} **".format(_key)
+                    print("** Skipping: {} **".format(_key))
                     pass
 
     def ls(self):
@@ -375,8 +381,8 @@ class h5Parse(object):
             with h5py.File(self.filename, mode='r') as h5f:
                 h5f.visititems(self._print_items)
         else:
-            print "VersionError: lsattr() requires h5py version >=2.3 " + \
-                "but installed version is", h5py.version.version
+            print("VersionError: lsattr() requires h5py version >=2.3 "
+                  "but installed version is", h5py.version.version)
 
     def get_dslist(self):
         """
@@ -399,7 +405,7 @@ class h5Parse(object):
             self._print_h5_dsets(h5f)
         return self.datasets
 
-    def get_data(self, dsname=None, verbose=False):
+    def get_data(self, dsname=None, verbose=False, order=False):
         """
         Get specific datasets from hdf5 file.
 
@@ -408,11 +414,14 @@ class h5Parse(object):
 
         Parameters
         ----------
-        dsname : str or list of str, optional
-            full path to the dataset in h5 file. If not present get_data()
-            returns dictionary of all valid datasets in the file (default None)
-        verbose, bool, optional
-            switch to verbose mode (default False)
+        dsname : str or sequence of str, optional
+            Full path to the hdf5 datasets in file. If not present get_data()
+            returns all valid datasets in the file.
+        verbose
+            Switch to verbose mode (default False)
+        order : bool, optional
+            Retain variable sequence as requested in the output dictionary
+            (ordered).
 
         Examples
         --------
@@ -421,37 +430,50 @@ class h5Parse(object):
 
             # Or in one line
             >>> data = h5_parse('file.h5').get_data('/dataset/path')
+
+        Returns
+        -------
+        dict or OrderedDict
+            (Ordered) Dictionary of requested or all variables from the file.
+
         """
-        self.h5f = h5py.File(self.filename, mode='r')
-        dataset = {}
+        from collections import OrderedDict
+        odict = OrderedDict() if order else {}
+        basestring = str
         if dsname is None:
-            if verbose:
-                print 'Reading all valid datasets in the file..'
-            dlist = self.get_dslist()
+            dsname = self.get_dslist()
+        elif isinstance(dsname, basestring):
+            dsname = (dsname,)
 
-            for i in dlist:
-                if verbose:
-                    print i
-                # dataset[i[0:]] = h5f[i].value
-                dataset[i] = self.h5f[i].value
-                # dataset.append({i[1:]: h5f[i].value})
-        else:
-            if type(dsname) is str:
-                dsname = [dsname]
-            for ds in dsname:
-                if ds in self.h5f:
-                    dataset[ds] = self.h5f[ds].value
-                else:
-                    print "**Cant find '{}' in {}**".format(ds, self.filename)
+        with h5py.File(self.filename, mode='r') as h5f:
+            for item in dsname:
+                try:
+                    odict.update({item: h5f[item][:]})
+                except KeyError:
+                    log.error('%s: No such variable in %s', item,
+                              self.filename)
+        return odict
 
-            # if dsname in h5f:
-            #    dataset = h5f[dsname].value
-            # else:
-            #    h5f.close()
-            #    sys.exit("Cant find {} in {}".format(dsname, self.filename))
+    def get_attr(self, dsname=None):
+        attr = {}
 
-        self.h5f.close()
-        return dataset
+        if dsname is None:
+            dsname = self.get_dslist()
+        elif isinstance(dsname, basestring):
+            dsname = (dsname,)
+
+        with h5py.File(self.filename, mode='r') as h5f:
+            for item in dsname:
+                tmp = {}
+                try:
+                    vatts = h5f[item].attrs
+                    for k in vatts:
+                        tmp.update({k: vatts[k]})
+                    attr.update({item: tmp})
+                except KeyError:
+                    log.error('%s: No such variable in %s', item,
+                              self.filename)
+        return attr
 
     def imshow(self, dsname, fillvalue=RMDI,
                flipx=False, flipy=False, stride=(1, 1), **kw):
@@ -486,8 +508,8 @@ class h5Parse(object):
         key, dataset = ddict.popitem()
 
         if dataset.ndim != 2:
-            print 'Dataset must be a 2D array, but dim of {} is {}.'.\
-                format(dsname, dataset.ndim)
+            print('Dataset must be a 2D array, but dim of {} is {}'.format(
+                dsname, dataset.ndim))
             raise Exception
 
         mdata = np.ma.masked_values(dataset, fillvalue)[::fly, ::flx]
@@ -497,14 +519,14 @@ class h5Parse(object):
         fig = plt.figure()
         ax = fig.add_subplot(111, title=key)
 
-        m = ax.imshow(mdata, cmap,
-                      interpolation=interp)
+        m = ax.imshow(mdata, cmap, interpolation=interp)
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(m, cax)
         nrows, ncols = mdata.shape
 
         def format_coord(x, y):
+            from ypylib.geo import MSG
             col = int(x + 0.5)
             row = int(y + 0.5)
             if col >= 0 and col < ncols and row >= 0 and row < nrows and \
@@ -522,11 +544,13 @@ class h5Parse(object):
         plt.show()
 
     def plot(self, dsname, fillvalue=RMDI):
-        """"Line plot 1D array"""
+        """Line plot 1D array"""
 
-        dataset = self.get_data(dsname)
+        ddict = self.get_data(dsname)
+        key, dataset = ddict.popitem()
+        print(dataset.shape)
         mdata = np.ma.masked_values(dataset, fillvalue)
-        plt.plot(mdata)
+        plt.plot(mdata.flatten())
         plt.title(dsname)
         plt.show()
 
@@ -537,7 +561,7 @@ class h5Parse(object):
 
 
 # ----------------------------------------------------------------------------
-# obsolete functions, but kept for now due to dependecy in other scripts.
+# obsolete functions, but kept for now due to dependency in other scripts.
 def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
     """
     Return SDS object(s) from HDF4 file
@@ -545,7 +569,7 @@ def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
     Parameters
     ----------
     FILENAME : str
-        Input statfile
+        Input filename
     SDSNAME : list, optional
         List of fields to read in
     QUIET : bool, optional
@@ -559,11 +583,12 @@ def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
     # Open file(s)
     # hdf_type = [('HDF SD file', '*.hdf')]
     # fi = dialog.pickfile(filetype=hdf_type) if not FILENAME else FILENAME
-    fi = dialog.pickfiles(extension='*.hdf') if not FILENAME else FILENAME
+    # fi = dialog.pickfiles(extension='*.hdf') if not FILENAME else FILENAME
+    fi = dialog_pickfiles(extension='*.hdf') if not FILENAME else FILENAME
     if (QUIET is False):
-        print '-' * (len(fi) + 8)
-        print "Opening {0}".format(fi)
-        print '-' * (len(fi) + 8)
+        print('-' * (len(fi) + 8))
+        print("Opening {0}".format(fi))
+        print('-' * (len(fi) + 8))
 
     # Open HDF SD interface
     try:
@@ -571,10 +596,11 @@ def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
 
         if not SDSNAME:
             # List all valid SDS in the file
-            datalist = hdf4.datasets().keys()
+            # datalist = hdf4.datasets().keys()
+            datalist = list(hdf4.datasets())
             datalist.sort()
             for k in datalist:
-                print k
+                print(k)
             DATAFIELD_NAME = raw_input(
                 "\n>> Please type dataset name(s) to read: ")
             DATAFIELD_NAME = map(str, DATAFIELD_NAME.split())
@@ -587,7 +613,7 @@ def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
         sds = []
         for idx, val in enumerate(DATAFIELD_NAME):
             if (QUIET is False):
-                print "Reading {0} {1} ..".format(idx, val)
+                print("Reading {0} {1} ..".format(idx, val))
             sds.append(hdf4.select(val))
             # print sds.info()
 
@@ -600,12 +626,12 @@ def get_sd(FILENAME=None, SDSNAME=None, QUIET=False):
         raise HDF4Error(e)
 
 
-def get_h5(statfile, dataset, start=[0, 0], stop=[None, None], stride=[1, 1]):
+def get_h5(filename, dataset, start=[0, 0], stop=[None, None], stride=[1, 1]):
     '''
     Read a 2D dataset from HDF5 file
 
     Args:
-     * statfile (str) HDF5 statfile
+     * filename (str) HDF5 filename
      * dataset (str) HDF5 dataset to read. The assumption here is that the
              dataset is 2 dimensional
 
@@ -619,8 +645,8 @@ def get_h5(statfile, dataset, start=[0, 0], stop=[None, None], stride=[1, 1]):
      * 2D numpy array of specified dataset (or a sliced region see Kwargs)
     '''
 
-    print 'Reading', dataset, '..'
-    f = h5py.File(statfile, 'r')
+    print('Reading', dataset, '..')
+    f = h5py.File(filename, 'r')
     group = f['/']
     #
     # For compound (structured) dataset the slicing approach wont work as is
@@ -639,20 +665,19 @@ def get_h5(statfile, dataset, start=[0, 0], stop=[None, None], stride=[1, 1]):
     return data
 
 
-def get_nc(statfile, dataset, verb=False):
+def get_nc(filename, dataset, verb=False):
     if verb:
-        print 'Reading', dataset, '..'
-    with Dataset(statfile, 'r', format='NETCDF3_CLASSIC') as f:
+        print('Reading', dataset, '..')
+    with Dataset(filename, 'r', format='NETCDF3_CLASSIC') as f:
         data = f.variables[dataset]
         return data[:]
 
 
-def get_nc4(statfile, dataset):
-    print 'Reading', dataset, '..'
-    with Dataset(statfile, 'r') as f:
-        # Dataset is the class behaviour to open the
-        # file and create an instance of the ncCDF4
-        # class.
+def get_nc4(filename, dataset):
+    print('Reading', dataset, '..')
+    with Dataset(filename, 'r') as f:
+        # Dataset is the class behaviour to open the file and create an
+        # instance of the ncCDF4 class.
 
         # data attributes
         # for a in f.variables[k].ncattrs():#

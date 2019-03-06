@@ -7,12 +7,109 @@ import numpy as np
 from scipy import stats
 from math import log
 from random import randint
+from scipy.ndimage.filters import uniform_filter1d
 # from .utils import v_locate
 # from matplotlib import cm
 # import matplotlib.pyplot as plt
 
 
-def stat2(x, y, lognormal=False):
+def scale_range(input, min, max):
+    """
+    scale an input array-like to a mininum and maximum number
+    the input array must be of a floating point array
+    if you have a non-floating point array, convert to floating using
+    `astype('float')`
+    this works with n-dimensional arrays
+    it will mutate in place
+    min and max can be integers
+    """
+
+    input += -(np.min(input))
+    input /= np.max(input) / (max - min)
+    input += min
+    return input
+
+
+def smooth(x, window_len=11, window='hanning'):
+    """smooth the data using a window with requested size.
+
+    *** Output array is longer by window_len -1 ***
+
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
+
+    Parameters
+    ----------
+    x: the input signal
+    window_len: the dimension of the smoothing window;
+                should be an odd integer
+    window: the type of window from 'flat', 'hanning', 'hamming',
+            'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+
+    Output
+    ------
+        the smoothed signal
+
+    Example
+    -------
+    t = linspace(-2,2,0.1)
+    x = sin(t)+randn(len(t))*0.1
+    y = smooth(x)
+
+    See also
+    --------
+
+    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman,
+    numpy.convolve, scipy.signal.lfilter
+
+    TODO: the window parameter could be the window itself if an array
+          instead of a string
+    NOTE: length(output) != length(input), to correct this:
+    return y[(window_len/2-1):-(window_len/2)] instead of just y.
+    """
+
+    if x.ndim != 1:
+        raise ValueError("smooth only accepts 1 dimension arrays.")
+
+    if x.size < window_len:
+        raise ValueError("Input vector needs to be bigger than window size.")
+
+    if window_len < 3:
+        return x
+
+    if window not in ('flat', 'hanning', 'hamming', 'bartlett', 'blackman'):
+        raise ValueError(
+            "Window not 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+
+    s = np.r_[x[window_len - 1:0:-1], x, x[-2:-window_len - 1:-1]]
+    # print(len(s))
+    if window == 'flat':  # moving average
+        w = np.ones(window_len, 'd')
+    else:
+        w = eval('np.' + window + '(window_len)')
+
+    y = np.convolve(w / w.sum(), s, mode='valid')
+    return y
+
+
+def running_mean(x, N):
+    """
+    Calaulcte running average from a series (x) using a window size (N)
+
+    Parameters
+    ----------
+    x : array of numbers
+    N : scalar integer
+    """
+    # cumsum = np.cumsum(np.insert(x, 0, 0))
+    # return (cumsum[N:] - cumsum[:-N]) / float(N)
+    return uniform_filter1d(x, size=N)
+
+
+def stat2(x, y):
     """
     Statistical comparison between two series.
 
@@ -30,20 +127,97 @@ def stat2(x, y, lognormal=False):
     y : array of numbers, predicted
         dependent or predicted variable containing series of points.
         Multi-dimensional arrays will be flattened
-    lognormal: bool, optional
-        Not implemented
 
     Returns
     -------
     dict
-        dictionary containing statistical metrics (min, max, median, variance,
-        skewness, kurtosis) for each series and bias, rmse, urmse,
-        fge, slope, stderr for slope, intercept, skill score, correlation,
-        p-value, rank correlation and p-value between x and y, and counts for
-        number of points used in cross-comparison.
+        Series stats
+        ------------
+        x_min, y_min :
+            Series minimum value of reference (x), predicted (y)
+        x_max, y_max :
+            Series maximum value of reference (x), predicted (y)
+        x_med, y_med :
+            Series median of reference (x), predicted (y)
+        x_avg, y_avg :
+            Average of reference (x), predicted (y)
+        x_var, y_var :
+            Sample (n-1) variance of reference (x), predicted (y)
+        x_skew, y_skew :
+            Skewness of reference (x), predicted (y)
+        x_kurt, y_kurt :
+            Kurtosis of reference (x), predicted (y)
+
+        Bias vs reference
+        -----------------
+        bias :
+            Mean bias
+            mean(y - x)
+        med_bias :
+            Median bias
+            median(y - x)
+        rel_bias :
+            Relative bias normalised by reference mean
+            bias / mean(x)
+        nmb :
+            Normalised mean bias
+            sum(y - x) / sum(x)  or bias / mean(x)
+        nmbf :
+            Normalised mean bias factor
+            bias / mean(x|y) for bias >=0|<0
+
+        Error vs reference
+        ------------------
+        rmse :
+            Root mean square difference
+            sqrt(mean( (y - x)**2) )
+        rel_rmse :
+            Relative rmse normalised by reference mean
+            rmse / mean(x)
+        nme :
+            Normalised mean absolute error
+            |sum(y - x)| / sum(x)
+        nmef :
+            Normalised mean absolute error factor (doi:10.1002/asl.125)
+            sum(|y - x|) / sum(x|y) for bias >=0|<0
+        urmse :
+            Unbiased root mean square difference
+            sqrt(rmse**2 - bias**2)
+        fge :
+            Fractional gross error
+            2 * mean(|(y - x) / (y + x)|)
+
+        Goodness of fit
+        ---------------
+        slope :
+            Slope of linear regression fit
+        intercept :
+            Intercept og linear fit
+        r_value :
+            Linear correlation (Pearson) coefficient
+        p_value :
+            p-value for Linear correlation
+        std_err :
+            Error of the estimated slope
+        r_spearman:
+            Rank correlation (Spearman) non-parametric
+        p_spearman:
+            p-value for Rank correlation
+
+        Skill metrics
+        -------------
+        ss :
+            Murphy skill score
+            1 - (rmse**2 / var(x))
+        d :
+            Willmott accuracy index
+            1 - ( sum(y - x) / sum( |y - mean(x)| + |x - mean(x)|)**2)
+
+        count :
+            Number of pairs
 
     """
-    # TODO
+
     x = np.array(x).flatten()
     y = np.array(y).flatten()
 
@@ -68,25 +242,44 @@ def stat2(x, y, lognormal=False):
 
     rmse = np.sqrt(np.mean((y - x)**2))
     bias = np.mean(y - x)
+    med_bias = np.median(y - x)
+    # normalised mean bias factor (nmbf) and normalised mean absolute error
+    # factor (nmaef). see doi:10.1002/asl.125
+    # result of sum of indiv. factor bias with obs (or model) conc. as a
+    # weighting function. this metric avoids undue influence of small numbers
+    # in denominator
+    # nmbf = [1 - pred.sum/obs.sum, pred.sum/obs.sum - 1][bias >= 0]
 
     return {
-        'x_min': xd[1][0], 'x_max': xd[1][1], 'x_med': np.median(x),
-        'x_avg': xd[2], 'x_var': xd[3], 'x_skew': xd[4], 'x_kurt': xd[5],
-        'y_min': yd[1][0], 'y_max': yd[1][0], 'y_med': np.median(y),
-        'y_avg': yd[2], 'y_var': yd[3], 'y_skew': yd[4], 'y_kurt': yd[5],
-        'bias': bias,                           # mean bias
-        'rmse': rmse,                           # RMSE
-        'urmse': np.sqrt(rmse**2 - bias**2),    # unbiased RMSE
+        'x_min': xd[1][0], 'y_min': yd[1][0],
+        'x_max': xd[1][1], 'y_max': yd[1][1],
+        'x_med': np.median(x), 'y_med': np.median(y),
+        'x_avg': xd[2], 'y_avg': yd[2],
+        'x_var': xd[3], 'y_var': yd[3],
+        'x_skew': xd[4], 'y_skew': yd[4],
+        'x_kurt': xd[5], 'y_kurt': yd[5],
+        'bias': bias,
+        'med_bias': med_bias,
+        'rel_bias': bias / xd[2],
+        'nmb': np.sum(y - x) / np.sum(x),
+        'nmbf': bias / [yd[2], xd[2]][bias >= 0],
+        'rmse': rmse,
+        'rel_rmse': rmse / xd[2],
+        'urmse': np.sqrt(rmse**2 - bias**2),
+        'nme': np.abs(np.sum(y - x)) / np.sum(x),
+        'nmef': np.sum(np.abs(y - x)) / [np.sum(y), np.sum(x)][bias >= 0],
         'fge': 2.0 * np.mean(np.abs((y - x) / (y + x))),
-        'r_spearman': rs_p[0],          # Rank correlation (Spearman)
-        'p_spearman': rs_p[1],          # p-value for Rank correlation
-        'slope': fit[0],                # Slope of linear fit
-        'intercept': fit[1],            # intercept og linear fit
-        'r_value': fit[2],              # Linear correlation (Pearson)
-        'p_value': fit[3],              # p-value for Linear correlation
-        'std_err': fit[4],              # Error of the estimated slope
-        'ss': 1 - (rmse**2 / xd[3]),    # Murphy Skill Score
-        'count': xd[0]                  # Number of pairs
+        'r_spearman': rs_p[0],
+        'p_spearman': rs_p[1],
+        'slope': fit[0],
+        'intercept': fit[1],
+        'r_value': fit[2],
+        'p_value': fit[3],
+        'std_err': fit[4],
+        'ss': 1 - (rmse**2 / xd[3]),
+        'd': 1 - (np.sum(y - x) /
+                  np.sum((np.abs(y - xd[2]) + np.abs(x - xd[2]))**2)),
+        'count': xd[0]
     }
 
 
@@ -183,67 +376,6 @@ def creategrid(x1, x2, y1, y2, dx, dy, mesh=True):
     return x_grid, y_grid
 
 
-# def grid_xyz(x, y, z, xo, yo):
-#     '''Bin (average) 1d scattered data on a plane
-
-#     Args:
-#      * x: array_like, shape(N,) An array containing the x coordinates of the
-#        points to be gridded.
-#      * y: array_like, shape(N,) An array containing the y coordinates of the
-#        points to be gridded.
-#      * z: array_like, shape(N,) f(x,y) actual data to be re-sampled (average
-#        at each grid cell).
-#      * xo: array_like, shape(X,) An array (monotonically increasing)
-#        containing the x coordinates of the output grid.
-#      * yo: array_like, shape(Y,) An array (monotonically increasing)
-#        containing the y coordinates of the output grid.
-
-#     Returns:
-#      * D: ndarray, shape(nxo, nyo) The 2D gridded array using sample z
-
-#     See also:
-#      * bin_xyz
-#     '''
-#     x = np.asarray(x, x.dtype)
-#     y = np.asarray(y, y.dtype)
-#     z = np.asarray(z, z.dtype)
-
-#     # TODO: do some sanity check for 1d arrays with equal number of elements
-#     nrow = yo.shape[0]
-#     ncol = xo.shape[0]
-
-#     # step size (rectangular cells)
-#     dx, dy = xo[1] - xo[0], yo[1] - yo[0]
-#     ex, ey = dx / 2.0, dy / 2.0
-#     # print xo.min(), xo.max()
-
-#     w = np.where((x >= xo.min()) & (x <= xo.max()) &
-#                  (y >= yo.min()) & (y <= yo.max()))
-
-#     # Shrink array
-#     x = x[w]
-#     y = y[w]
-#     z = z[w]
-
-#     # store sum of z values falling in each bin and count n_sample in each
-#     #  bin
-#     tot = np.empty((nrow, ncol), z.dtype)
-#     tot[:, :] = np.NAN
-#     cnt = np.ones((nrow, ncol), 'int')
-#     # ones in order to avoid division error
-
-#     print('Binning {} samples on {}x{} grid'.format(
-#           z.size, xo.size, yo.size))
-
-#     for i in np.arange(z.size):
-#         px = v_locate(xo, x[i])
-#         py = v_locate(yo, y[i])
-#         if np.abs((xo[px] - x[i]) <= ex and np.abs(yo[py] - y[i]) <= ey):
-#             tot[py, px] = np.nansum([tot[py, px], z[i]])
-#             cnt[py, px] += 1
-#     return tot / cnt  # mean
-
-
 def josephus(n, k):
     '''Josephus circular elimination (eliminate every kth item) from a sample
     of n.
@@ -317,194 +449,6 @@ def nrand(n=5, low=1, high=49):
      * n random numbers in [low, high] range
    '''
     return [randint(low, high) for _ in range(0, n)]
-
-
-# def bindata(x, y, z, xi, yi, ppbin=False, method='median'):
-#     '''Bin irregularly spaced data on a regular grid (centre of the bins).
-#     Computes the median (default) or mean value within bins defined by
-#     regularly spaced xi and yi coordinates (the grid defining the bins).
-
-#     Args:
-#     * x, y: ndarray (1D) The independent variables x- and y-axis of the grid.
-#     * z: ndarray (1D) The dependent variable in the form z = f(x,y).
-#     * xi, yi: ndarray (1D) The coordinates defining the x- and y-axis of the
-#       grid.
-
-#     Kwargs:
-#      * ppbin: boolean, optional The function returns `bins` variable
-#        (see below for description): [False | True].
-#      * method: string, optional The statistical operator used to compute the
-#        value of each bin: ['median' | 'mean'].
-
-#     Returns:
-#      * grid: ndarray (2D) The evenly binned data. The value of each cell is
-#        the median (or mean) value of the contents of the bin.
-#      * bins: ndarray (2D) A grid the same shape as `grid`, except the value of
-#        each cell is the number of points per bin. Returns only if `ppbin` is
-#        set to True.
-
-#     Revisions:
-#     Implemented from Fernando Paolo's initial version (2010-11-06).
-#     '''
-
-#     if x.ndim != y.ndim != z.ndim != 1 \
-#             or x.shape[0] != y.shape[0] != z.shape[0]:
-#         raise TypeError('input x,y,z must be all 1D arrays of the same length')
-
-#     if method == 'median':
-#         median = True
-#     else:
-#         median = False
-
-#     # make the grid
-#     print('Binning {} samples on {}x{} grid'.format(z.size, xi.size, yi.size))
-#     nrow = yi.shape[0]
-#     ncol = xi.shape[0]
-#     grid = np.empty((nrow, ncol), dtype=xi.dtype)
-#     if ppbin:
-#         bins = np.copy(grid)
-
-#     # step size (rectangular cells)
-#     dx = xi[1] - xi[0]
-#     dy = yi[1] - yi[0]
-#     hx = dx / 2.
-#     hy = dy / 2.
-
-#     # bin the data
-#     for row in xrange(nrow):
-#         for col in xrange(ncol):
-#             xc = xi[col]  # (xc,yc) = center of the bin
-#             yc = yi[row]
-#             ind, = np.where((xc - hx <= x) & (x < xc + hx) &
-#                             (yc - hy <= y) & (y < yc + hy))
-#             npts = len(ind)
-#             if npts > 0:
-#                 if median:
-#                     grid[row, col] = np.median(z[ind])
-#                 else:
-#                     grid[row, col] = np.mean(z[ind])
-#                 if ppbin:
-#                     bins[row, col] = npts
-#             else:
-#                 grid[row, col] = np.nan
-#                 if ppbin:
-#                     bins[row, col] = 0
-
-#     # return the grid
-#     if ppbin:
-#         return grid, bins
-#     else:
-#         return grid
-
-
-# def griddata(x, y, z, binsize=1, retbin=True, retloc=True):
-#     # taken from:
-#     # http://wiki.scipy.org/Cookbook/Matplotlib/Gridding_irregularly_spaced_data
-#     """"Place unevenly spaced 2D data on a grid by 2D binning (nearest neighbour
-#     interpolation).
-
-#     Args:
-#      * x: ndarray (1D) The independent data x-axis of the grid.
-#      * y: ndarray (1D) The independent data y-axis of the grid.
-#      * z: ndarray (1D) The dependent data in the form z = f(x,y).
-
-#     Kwargs:
-#      * binsize: scalar, optional The full width and height of each bin on the
-#        grid. If each bin is a cube, then this is the x and y dimension. This
-#        is the step in both directions, x and y.
-#      * retbin: boolean, optional Function returns `bins` variable (see below
-#        for description) if set to True.
-#      * retloc: boolean, optional Function returns `wherebins` variable (see
-#        below for description) if set to True.
-
-#     Returns:
-#      * grid: ndarray (2D) The evenly gridded data.  The value of each cell is
-#        the median value of the contents of the bin.
-#      * bins: ndarray (2D) A grid the same shape as `grid`, except the value of
-#        each cell is the number of points in that bin.  Returns only if `retbin`
-#        is set to True.
-#      * wherebin: list (2D) A 2D list the same shape as `grid` and `bins` where
-#      each cell contains the indicies of `z` which contain the values stored in
-#      the particular bin.
-
-#     Revisions:
-#     2010-07-11  ccampo  Initial version
-
-#     """
-#     # get extrema values.
-#     xmin, xmax = x.min(), x.max()
-#     ymin, ymax = y.min(), y.max()
-
-#     # make coordinate arrays.
-#     xi = np.arange(xmin, xmax + binsize, binsize)
-#     yi = np.arange(ymin, ymax + binsize, binsize)
-#     xi, yi = np.meshgrid(xi, yi)
-
-#     # make the grid.
-#     grid = np.zeros(xi.shape, dtype=x.dtype)
-#     nrow, ncol = grid.shape
-#     if retbin:
-#         bins = np.copy(grid)
-
-#     # create list in same shape as grid to store indices
-#     if retloc:
-#         wherebin = np.copy(grid)
-#         wherebin = wherebin.tolist()
-
-#     # fill in the grid.
-#     for row in range(nrow):
-#         for col in range(ncol):
-#             xc = xi[row, col]  # x coordinate.
-#             yc = yi[row, col]  # y coordinate.
-
-#             # find the position that xc and yc correspond to.
-#             posx = np.abs(x - xc)
-#             posy = np.abs(y - yc)
-#             ibin = np.logical_and(posx < binsize / 2., posy < binsize / 2.)
-#             ind = np.where(ibin is True)[0]
-
-#             # fill the bin.
-#             my_bin = z[ibin]
-#             if retloc:
-#                 wherebin[row][col] = ind
-#             if retbin:
-#                 bins[row, col] = my_bin.size
-#             if my_bin.size != 0:
-#                 binval = np.median(my_bin)
-#                 grid[row, col] = binval
-#             else:
-#                 grid[row, col] = np.nan  # fill empty bins with nans.
-
-#     # return the grid
-#     if retbin:
-#         if retloc:
-#             return grid, bins, wherebin
-#         else:
-#             return grid, bins
-#     else:
-#         if retloc:
-#             return grid, wherebin
-#         else:
-#             return grid
-
-
-# def plotbins(xi, yi, grid, cmap='Spectral_r'):
-#     '''Plots data binned with bin_xyz'''
-
-#     if xi.shape[0] < 2 or yi.shape[0] < 2:
-#         raise TypeError('x- or y-axis too small: N data < 2')
-#     dx = xi[1] - xi[0]
-#     dy = yi[1] - yi[0]
-#     left, right, bottom, top = xi.min(), xi.max(), yi.min(), yi.max()
-    # extent = (left - dx / 2., right + dx / 2.,
-    #           bottom - dy / 2., top + dy / 2.)
-
-#     plt.imshow(grid, extent=extent, aspect='auto', origin='lower',
-#                cmap=cmap, interpolation='none')
-#     print "plotting.."
-#     plt.colorbar()  # draw colour bar
-#     plt.title('Binned data')
-#     plt.show()
 
 
 def main():

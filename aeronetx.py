@@ -14,8 +14,11 @@ from StringIO import StringIO
 from datetime import datetime, timedelta
 import pandas as pd
 from HTMLParser import HTMLParser
+# date_parse = lambda x: pd.datetime.strptime(x, "%d:%m:%Y %H:%M:%S")
 
-date_parse = lambda x: pd.datetime.strptime(x, "%d:%m:%Y %H:%M:%S")
+
+def date_parse(str_type, fmt="%d:%m:%Y %H:%M:%S"):
+    return pd.datetime.strptime(str_type, fmt)
 
 
 class MLStripper(HTMLParser):
@@ -82,7 +85,7 @@ def show_v3_site():
     m.drawcoastlines(linewidth=0.5, color='#dcdcdc', zorder=1)
     m.drawcountries(linewidth=0.6, color='#cbcbcb', zorder=2)
 
-#     print z.min(), z.max()
+    # print z.min(), z.max()
     # norm = mpl.colors.Normalize(vmin=z.min(), vmax=z.max())
     # mc = cm.ScalarMappable(norm=norm, cmap="jet")
     x1, y1 = m(x.values, y.values)
@@ -122,7 +125,7 @@ def downlaod_v3_site(site, ymd=None, ymd2=None, prd='SDA15', avg='10',
 
     """
     # Parse AERONET site first
-    if not parse_v3_site(site)[0]:
+    if parse_v3_site(site)[0] is False:
         return
 
     host = 'https://aeronet.gsfc.nasa.gov/cgi-bin/print_web_data_v3'
@@ -149,7 +152,7 @@ def downlaod_v3_site(site, ymd=None, ymd2=None, prd='SDA15', avg='10',
         cmd = q.format(host, site, y1, m1, d1, hr1, y2, m2, d2, hr2, prd, avg)
 
     if verb:
-        print cmd
+        print(cmd)
     tmp = next(tempfile._get_candidate_names())
     os.system(cmd + ' > ' + tmp)
 
@@ -466,6 +469,16 @@ def plot_v3_site_sda(site, ymd=None, ymd2=None, hr1=0, hr2=23,
     plt.legend(loc='best', prop={'size': 12})
     # plt.gcf().autofmt_xdate()
     plt.show()
+
+
+def read_all_sites_times_daily_averages(filename, skip_rows=6,
+                                        ymd1=None, ymd2=None,
+                                        lat1=-90, lat2=90,
+                                        lon1=-180, lon2=180):
+
+    df = pd.read_csv(filename, skiprows=skip_rows, na_values=-999.0)
+    return df
+    pass
 
 
 if __name__ == "__main__":
