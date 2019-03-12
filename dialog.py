@@ -46,7 +46,7 @@ def pickfiles(initial_dir=None, extension=None):
         out = [f for f in files] if len(files) > 1 else files[0]
         return out
     else:
-        print 'Warning! Nothing picked, None returned.'
+        print('Warning! Nothing picked, None returned.')
 
 
 # def pickfile(initialdir=None, filetype=[('All types', '*')]):

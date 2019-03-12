@@ -46,7 +46,7 @@ log.basicConfig(
 # To log debug messages, call
 # >>> log.getLogger().setLevel(log.DEBUG)
 
-__version__ = "version"
+__version__ = "1.0"
 __author__ = "Yaswant Pradhan"
 
 

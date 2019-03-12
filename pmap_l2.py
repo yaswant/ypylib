@@ -19,9 +19,9 @@ from datetime import datetime as dt
 from netCDF4 import Dataset
 from ypylib.stats import bin_xyz
 
-# =============================================================================
+# ----------------------------------------------------------------------------
 # Include Lato Font paths for plot titles
-# =============================================================================
+# ----------------------------------------------------------------------------
 exfs = r'/usr/lib/rstudio/resources/presentation/revealjs/fonts'
 lp = exfs if os.path.exists(exfs) is True else r'$DATADIR/Fonts'
 Lato = [lp + '/Lato-' + str(i) for i in ['Bold.ttf', 'Regular.ttf']]
@@ -30,14 +30,9 @@ LatoR = fm.FontProperties(fname=Lato[1])
 
 
 class Level2Files(object):
-    '''
-    classdocs
-    '''
+    """PMAP Level-2 processor class."""
 
     def __init__(self, **kw):
-        '''
-        Constructor
-        '''
         self.files = []
         self.date = kw.get('date', dt.today().strftime('%Y%m%d'))
         self.local = '$SCRATCH/PMAP/' + self.date
@@ -50,11 +45,17 @@ class Level2Files(object):
     def __enter__(self):
         return self
 
-
-# ============================================================================
-# Read and consolidate data from Level 2 files
-# ============================================================================
     def consolidateDailyAod(self, filepath=None, sat=None):
+        """
+        Read and consolidate data from Level 2 files
+
+        Args:
+            filepath (str, optional): Path to read L2 PMAP files
+            sat (str, optional): Specify satellite (METOPA or METOPB)
+
+        Returns:
+            tuple: consolidated (Lon, Lat, AOD)
+        """
         if filepath is None:
             filepath = self.local
         if sat is None:
@@ -79,8 +80,6 @@ class Level2Files(object):
                 else:
                     print ".",
 
-#             for fi in files:
-
                 with Dataset(fi, 'r') as f:
                     try:
                         grp = f.groups['Data'].groups['MeasurementData']
@@ -89,9 +88,12 @@ class Level2Files(object):
                         aod = aop.variables['aerosol_optical_depth']
                         w = np.where(aod[:] > 0)
 
-                        clon.append(geo.variables['aerosol_center_longitude'][w])
-                        clat.append(geo.variables['aerosol_center_latitude'][w])
-                        caod.append(aop.variables['aerosol_optical_depth'][w])
+                        clon.append(
+                            geo.variables['aerosol_center_longitude'][w])
+                        clat.append(
+                            geo.variables['aerosol_center_latitude'][w])
+                        caod.append(
+                            aop.variables['aerosol_optical_depth'][w])
 
                     except KeyError as e:
                         print "Invalid Key:", e
@@ -112,7 +114,18 @@ class Level2Files(object):
                      rebin=(0.5, 0.5),
                      figsize=[8, 5],
                      pngfile=None):
+        """Plot consolidated PMAP AOD
 
+        Args:
+            filepath (str, optional): Location of L2 PMAP nc files.
+            sat (str, optional): Satellite descriptor (METOPA or METOPB).
+            rebin (tuple, optional): Bin samples to (x, y) degrees res.
+            figsize (list, optional): Output figure size.
+            pngfile (str, optional): Output image filename.
+
+        Returns:
+            None
+        """
         self.sat = sat
         lon, lat, aod = self.consolidateDailyAod(filepath=filepath, sat=sat)
         if self.status != 0:
@@ -139,30 +152,35 @@ class Level2Files(object):
         gline = (None, None)  # grid line option
         m = Basemap(projection='cyl', lon_0=0, resolution='c')
         m.drawmapboundary(fill_color='1')
-        im1 = m.pcolormesh(lons, lats, gaod, vmin=0, vmax=2., shading='flat',
-                           cmap=cmap, latlon=True)
+        im1 = m.pcolormesh(
+            lons, lats, gaod, vmin=0, vmax=2., shading='flat', cmap=cmap,
+            latlon=True)
 
-        m.drawparallels(np.arange(-90., 99., 30.), labels=[1, 0, 0, 0],
-                        fontsize=9, color='gray', linewidth=0.2, dashes=gline)
-        m.drawmeridians(np.arange(-180., 180., 30.), labels=[0, 0, 0, 1],
-                        fontsize=9, color='gray', linewidth=0.2, dashes=gline)
+        m.drawparallels(
+            np.arange(-90., 99., 30.), labels=[1, 0, 0, 0], fontsize=9,
+            color='gray', linewidth=0.2, dashes=gline)
+        m.drawmeridians(
+            np.arange(-180., 180., 30.), labels=[0, 0, 0, 1], fontsize=9,
+            color='gray', linewidth=0.2, dashes=gline)
         m.drawcoastlines(linewidth=0.5)
 
-        cb = m.colorbar(im1, location='bottom', size='5%', pad='15%',
-                        format='%g')
+        cb = m.colorbar(
+            im1, location='bottom', size='5%', pad='15%', format='%g')
         cb.ax.xaxis.label.set_font_properties(LatoR)
         fieldname = 'AOD_550'
-        cb.set_label('{0} []'.format(fieldname), fontsize='small',
-                     labelpad=-42)
+        cb.set_label(
+            '{0} []'.format(fieldname), fontsize='small', labelpad=-42)
         cb.ax.tick_params(labelsize=9, which='both', direction='in')
 
         # add plot title
-        ax.set_title(self.daytitle + ' : ' + vdate.strftime('%d/%m/%Y'),
-                     fontproperties=LatoB)
-        plt.figtext(0.945, 0.13, dt.utcnow().strftime('%FZ%T'),
-                    fontsize='xx-small', horizontalalignment='right',
-                    family='monospace', verticalalignment='baseline',
-                    bbox=dict(facecolor='gray', alpha=0.2))
+        ax.set_title(
+            self.daytitle + ' : ' + vdate.strftime('%d/%m/%Y'),
+            fontproperties=LatoB)
+        plt.figtext(
+            0.945, 0.13, dt.utcnow().strftime('%FZ%T'), fontsize='xx-small',
+            horizontalalignment='right', family='monospace',
+            verticalalignment='baseline',
+            bbox=dict(facecolor='gray', alpha=0.2))
 
         pngtag = {'PMAP product': 'Aerosol',
                   'PMAP dataset': fieldname,
@@ -170,9 +188,6 @@ class Level2Files(object):
         savefig(pngfile, img_converter=2, img_tags=pngtag)
         print dt.utcnow().strftime('%T') + ' Saved image ' + pngfile
 
-# ============================================================================
-# Exit
-# ============================================================================
     def __exit__(self, exc_type, exc_value, traceback):
         for fi in self.files:
             os.unlink(fi)
