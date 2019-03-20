@@ -13,7 +13,6 @@ from ypylib.utils import log
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
-__email__ = "yaswant.pradhan@metoffice.gov.uk"
 __copyright__ = "(c) Crown copyright 2019, the Met Office."
 
 
