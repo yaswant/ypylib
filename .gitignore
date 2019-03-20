@@ -1,1 +1,21 @@
-*.pyc
+# python ignores
+*.py[co]
+
+# ide files
+.project
+.pydevproject
+
+# temp files
+*~
+\#*
+\.\#*
+*.swp
+
+# OS files
+\.DS_Store
+.cache/
+__pycache__/
+
+# Egg that gets created with 'pip install -v -e .'
+*.egg-info/
+.eggs/
