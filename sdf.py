@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 Scientific Data Format parser
 
-:author: yaswant.pradhan
-:copyright: Crown copyright. Met Office
 """
-
 from __future__ import print_function
 from future.utils import iteritems
 import os
@@ -31,6 +27,7 @@ __author__ = "Yaswant Pradhan"
 
 # Real Missing Data Indicator
 RMDI = -1073741824.0
+basestring = str
 
 
 class h4Parse(object):
@@ -39,7 +36,7 @@ class h4Parse(object):
 
     Examples
     --------
-    >>> d = h4_parse('file.hdf')
+    >>> d = h4_parse('testfile.hdf')
     >>> print d.items  # print available datasets in hdf file
 
     """
@@ -58,27 +55,33 @@ class h4Parse(object):
             self._populate_SD()
 
     def set_filename(self, filename):
-        """Set or update hdf filename"""
+        """
+        Set or update hdf filename
+        """
         self.filename = filename
         self._populate_SD()
 
     def _populate_SD(self):
-        """Populate SDs and their shape attributes"""
+        """
+        Populate SDs and their shape attributes
+        """
 
         try:
             h4 = SD(self.filename, mode=SDC.READ)
             # self.sds = sorted(h4.datasets().keys())
             self.sds = sorted(list(h4.datasets()))  # 2 & 3
             self.attr.append(h4.attributes())
-            for k, v in sorted(h4.datasets().viewitems()):
+
+            # for k, v in sorted(h4.datasets().viewitems()):
+            for k, v in sorted(h4.datasets().items()):
                 self.items.append((k, v[1]))
             h4.end()
         except HDF4Error as e:
             raise HDF4Error('{}: {}'.format(e, self.filename))
 
-    def get_sds(self, fieldnames=[]):
+    def get_sds(self, fieldnames=None):
         """
-        Returns specific or all SDS in the hdf file as dictionary.
+        Return specific or all SDS in the hdf file as dictionary.
 
         SDS arrays can be accessed using the 'data' key. Note that no scaling
         is applied to the data in get() method (use get_scaled() to achieve
@@ -88,31 +91,35 @@ class h4Parse(object):
             'add_offset'
             '_FillValue'
         """
-        # Convert scalar fieldnames to list
-        if not isinstance(fieldnames, list):
-            fieldnames = [fieldnames]
+
+        # Convert scalar fieldnames to sequence
+        if isinstance(fieldnames, basestring):
+            fieldnames = (fieldnames,)
+
         # Open file to read SDs
         try:
             h4 = SD(self.filename, mode=SDC.READ)
             sclinfo = None
             if 'Slope_and_Offset_Usage' in h4.attributes():
                 sclinfo = 'Slope_and_Offset_Usage'
+
             # Get all available SDS from file if fieldnames in not given
-            if len(fieldnames) == 0:
+            if fieldnames is None:
                 fieldnames = []
                 for key in sorted(h4.datasets()):
                     fieldnames.append(key)
+
             # Create and empty dataset dictionary with all available
             # fields fill in data from SDS
             sds = dict.fromkeys(fieldnames, {})
             for key in sds:
                 attrs = h4.select(key).attributes()
-                # print(attrs)
                 if sclinfo:
                     attrs[sclinfo] = h4.attributes()[sclinfo]
 
                 sds[key] = attrs
                 sds[key]['data'] = h4.select(key).get()
+
             # Close hdf interface
             h4.end()
         except HDF4Error as e:
@@ -245,13 +252,17 @@ class h5Parse(object):
         return self
 
     def set_filename(self, filename):
-        """Set or update hdf5 filename"""
+        """
+        Set or update hdf5 filename
+        """
         self.filename = filename
         self._filetest()
         self._populate_items()
 
     def _filetest(self):
-        """Check filename is a valid (hdf5) file"""
+        """
+        Check filename is a valid (hdf5) file
+        """
         try:
             open(self.filename)
         except IOError as e:
@@ -262,8 +273,9 @@ class h5Parse(object):
                 raise IOError(err)
 
     def _populate_items(self):
-        """Self contained function to populate items in hdf5 file."""
-
+        """
+        Self contained function to populate items in hdf5 file
+        """
         def list_objects(name, obj):
             if isinstance(obj, h5py.Group):
                 self.items.append(name)
@@ -310,8 +322,9 @@ class h5Parse(object):
             print("    %s: %s" % (key, val))
 
     def _print_h5_dsets(self, obj, offset=''):
-        """Print data structure of a h5/nc4 file."""
-
+        """
+        Print data structure of a h5/nc4 file
+        """
         if isinstance(obj, h5py.File):
             if self.verbose is True:
                 print(obj.file, '(File)', obj.name)
@@ -429,7 +442,7 @@ class h5Parse(object):
 
         Examples
         --------
-        >>> h5 = h5_parse('file.h5')
+        >>> h5 = h5_parse('testfile.h5')
         >>> data = h5.get_data('/dataset/path')
 
         # Or in one line
@@ -443,7 +456,6 @@ class h5Parse(object):
         """
         from collections import OrderedDict
         odict = OrderedDict() if order else {}
-        basestring = str
         if dsname is None:
             dsname = self.get_dslist()
         elif isinstance(dsname, basestring):
@@ -459,6 +471,9 @@ class h5Parse(object):
         return odict
 
     def get_attr(self, dsname=None):
+        """
+        Get dataset attributes dictionary
+        """
         attr = {}
 
         if dsname is None:
@@ -485,8 +500,14 @@ class h5Parse(object):
         return isinstance(value, TypeError)
 
 
+# alias class
 h4_parse = h4Parse
 h5_parse = h5Parse
 
 if __name__ == '__main__':
     pass
+    h4file = os.path.expandvars(
+        '$SCRATCH/61/MYD04_L2/Recent/MYD04_L2.A2019079.1545.061.NRT.hdf')
+    h4 = h4Parse(h4file)
+    x = h4.get_sds(['Deep_Blue_Number_Pixels_Used_550_Land', 'Solar_Zenith'])
+    print(x.keys())

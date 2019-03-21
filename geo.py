@@ -1180,15 +1180,17 @@ if __name__ == "__main__":
     # doctest.testmod()
     # pass
 
-    filename0 = ('/scratch/fra6/MSG/LiteSlotstore/ICE-D/20150812/'
-                 'MSG_201508121200_DustAOD.h5')
+    filename0 = os.path.expandvars(
+        '$SCRATCH/MSG/LiteSlotstore/ICE-D/20150812/'
+        'MSG_201508121200_DustAOD.h5')
     plt_kw = dict(
         dust_rgb=True,
-        extent=(-60.5, 55, 0, 70.5),
+        # extent=(-60.5, 55, 0, 70.5),
+        # stride=(8, 8),
+        extent=(-20, 20, 10, 40),
         draw_countries=True,
         ccolor='k',
-        stride=(8, 8),
-        projection=ccrs.PlateCarree(),
+        # projection=ccrs.PlateCarree(),
         xglocs=list(range(-60, 55, 20)),
         yglocs=list(range(10, 71, 20)),
         # save_fig=os.path.expandvars('$SCRATCH/dustrgb.png'),
@@ -1204,7 +1206,7 @@ if __name__ == "__main__":
     # lon_shift = shiftlon(lon, lon_0)
     # print "original lon:", lon
     # print " shifted lon:", lon_shift
-    # h5f = '/data/local/fra6/sample_data/slotstores/MSG_201202151600_lite.h5'
+    # h5f = '/sample_data/slotstores/MSG_201202151600_lite.h5'
     # msg = MSG()
     # f = msg.geo2pix([0, 2], [0, 10])
     # print f[0], f[1]
