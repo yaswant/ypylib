@@ -365,8 +365,8 @@ def creategrid(x1, x2, y1, y2, dx, dy, mesh=True):
 
     x_grid = np.zeros(nx)  # fill with lon_min
     y_grid = np.zeros(ny)  # fill with lon_max
-    x_grid = x_grid + (np.asarray(range(nx)) * dx)
-    y_grid = y_grid + (np.asarray(range(ny)) * dy)
+    x_grid = x_grid + (np.asarray(list(range(nx))) * dx)
+    y_grid = y_grid + (np.asarray(list(range(ny))) * dy)
 
     x_grid, y_grid = np.meshgrid(x_grid, y_grid)
     if mesh is not True:

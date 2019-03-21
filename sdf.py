@@ -5,11 +5,13 @@ Scientific Data Format parser
 
 """
 from __future__ import print_function
+from builtins import object
+from past.builtins import basestring
 from future.utils import iteritems
+from collections import OrderedDict
 import os
 import numpy as np
 import h5py
-from ypylib.utils import log
 try:
     from pyhdf.HDF import HDF
     from pyhdf.SD import SD, SDC
@@ -18,7 +20,7 @@ try:
     h4err = None
 except ImportError as h4err:
     pass
-
+from ypylib.utils import log
 # from datetime import datetime
 # import pdb
 
@@ -27,7 +29,7 @@ __author__ = "Yaswant Pradhan"
 
 # Real Missing Data Indicator
 RMDI = -1073741824.0
-basestring = str
+# basestring = str
 
 
 class h4Parse(object):
@@ -500,7 +502,84 @@ class h5Parse(object):
         return isinstance(value, TypeError)
 
 
-# alias class
+def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
+    """
+    Load variables from a netCDF file to a dictionary.
+
+    Parameters
+    ----------
+    filename : str
+        input netCDF filename
+    variables : sequence of str, optional
+        Sequence of variable names to read from the file. default is to read
+        all variables.
+    verb : bool, optional
+        Verbose mode - print attributes of loaded variables.
+    gattr : bool, optional
+        Print global attributes of the netCDF file.
+    order : bool, optional
+        Retain variable sequence as requested in the output dictionary
+        (ordered).
+
+    Returns
+    -------
+    dict or OrderedDict
+        (Ordered) Dictionary of requested or all variables from the file.
+
+    """
+    from netCDF4 import Dataset
+    out = OrderedDict() if order else {}
+    with Dataset(filename, 'r') as nc:
+
+        # Dimensions
+        if verb:
+            dims = nc.dimensions
+            print('dimensions:')
+            for j in dims:
+                print('   {} = {}'.format(dims[j].name, dims[j].size))
+            print('loaded variables:')
+
+        # Parse variable names
+        if variables is None:
+            variables = list(nc.variables.keys())
+        elif isinstance(variables, basestring):
+            variables = (variables,)
+
+        # Iterate through requested variables and update out dictionary
+        for item in variables:
+            try:
+                out.update({item: nc.variables[item][:]})
+
+                # be verbose?
+                if verb:
+                    # Variable name, dims, type, data type
+                    print('   {} {} {} {}'.format(
+                        item,
+                        nc.variables[item].dimensions,
+                        type(nc.variables[item][:]),
+                        nc.variables[item].dtype))
+
+                    # Variable Attributes
+                    for key in sorted(nc.variables[item].ncattrs()):
+                        print('      {}: {}'.format(
+                            key, getattr(nc.variables[item], key)))
+
+            except KeyError:
+                log.error('%s: No such variable in %s', item, filename)
+
+        # Global attributes
+        if gattr:
+            print('\n// global attributes:')
+            if len(nc.ncattrs()) == 0:
+                print(None)
+            else:
+                for attr in sorted(nc.ncattrs()):
+                    print('      :{} = {}'.format(attr, getattr(nc, attr)))
+    # Return data dict
+    return out
+
+
+# alias hxParse class
 h4_parse = h4Parse
 h5_parse = h5Parse
 
@@ -510,4 +589,4 @@ if __name__ == '__main__':
         '$SCRATCH/61/MYD04_L2/Recent/MYD04_L2.A2019079.1545.061.NRT.hdf')
     h4 = h4Parse(h4file)
     x = h4.get_sds(['Deep_Blue_Number_Pixels_Used_550_Land', 'Solar_Zenith'])
-    print(x.keys())
+    print(list(x.keys()))

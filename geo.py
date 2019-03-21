@@ -739,7 +739,7 @@ def plotx(filename, add_cbar=False,
 
     elif dataset_path and dust_rgb is False:
         dset = h5.get_data(dataset_path)
-        if len(dset.keys()) == 0:
+        if len(list(dset.keys())) == 0:
             return
         plot_array = dset[dataset_path][::-1, ::-1][::stride[0], ::stride[1]]
         # print plot_array.dtype
@@ -916,7 +916,7 @@ def plotx(filename, add_cbar=False,
         return plt
 
 
-class MSG:
+class MSG(object):
 
     """
     Warning! The software is for use with MSG data only and will not work in

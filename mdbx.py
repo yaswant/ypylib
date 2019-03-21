@@ -6,16 +6,10 @@ Created on Wed Oct 11 14:38:17 2017
 """
 import os
 import pwd
-import inspect
 import numpy as np
 from metdb import obs, subtypes
 from csv import writer
-# import warnings
 from ypylib.utils import XYZ, ll_parse, log
-
-
-def public_methods():
-    return zip(*inspect.getmembers(Query, predicate=inspect.ismethod))[0][1:]
 
 
 class Query(object):
@@ -214,11 +208,11 @@ class Query(object):
         self.keep = keep
         self.constrain = constrain
         self.data = None
-        # self.mdb_extract = [True, False][self.keep is True]
         self.mdb_extract = False if self.keep is True else True
 
     def set_element_dtype(self, elements, dtypes):
-        """Set element data types if not already defined in the subtypes dict.
+        """
+        Set element data types if not already defined in the subtypes dict.
 
         Parameters
         ----------
@@ -235,7 +229,8 @@ class Query(object):
             subtypes.DTYPE_MAPS[self.subtype][el] = dt
 
     def extract(self, verbose=False, fix_unknown=False):
-        """Extract obs from MetDB.
+        """
+        Extract obs from MetDB.
 
         Parameters
         ----------
@@ -582,7 +577,7 @@ def ex_sataod_india_dust():
         'Agra': {'lat': 27.1767, 'lon': 78.0081},
     }
     arrow = dict(facecolor='black', width=1, shrink=0.1, headwidth=5)
-    for i in locs.keys():
+    for i in list(locs.keys()):
         plt.scatter(
             locs[i]['lon'], locs[i]['lat'],
             marker='s', color='k', alpha=0.5)
@@ -607,7 +602,7 @@ def ex_crete_dust():
         gspacing=(5, 5),
         title='MODIS Aqua+Terra aerosol optical depth (DT+DB) on ' + date,
         cb_on=True, cb_title='AOD at 550nm []')
-    # plt.savefig('/home/h05/fra6/MODISAOD_Crete_' + date + '.png')
+    # plt.savefig(os.path.expandvars('/$HOME/MODISAOD_Crete_' + date + '.png'))
     return plt
 
 
