@@ -13,7 +13,6 @@ from ypylib.utils import log
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
-__copyright__ = "(c) Crown copyright 2019, the Met Office."
 
 
 # Constants
@@ -34,29 +33,18 @@ RPOL = 6356583.8               # Earth semi-minor axis (m)
 
 
 class GeoProjection(object):
-    """
-    A geostationary projection definition for SPS processing
-
+    """A geostationary projection definition for SPS processing.
     """
     def __init__(self, satellite, channel_resolution=None,
                  apply_SEVIRI_grid_correction=False):
-        """
-        Defines the parameters specific to a satellite
+        """Defines the parameters specific to a satellite.
 
         Args:
-
-        * satellite (string)
-            Satellite (e.g. MSG)
-
-        Kwargs:
-
-        * channel_resolution (string)
-            Used to indicate channels with atypical resolution
-
-        * apply_SEVIRI_grid_correction (boolean)
-            True if SEVIRI grid correction to be applied (MSG
-            data prior to 6 Dec 2017)
-
+            satellite (str): Satellite ID. Defaults to 'MSG'.
+            channel_resolution (str, optional): Used to indicate channels with
+                atypical resolution.
+            apply_SEVIRI_grid_correction (bool, optional): SEVIRI grid
+                correction to be applied for MSG data prior to 6 Dec 2017.
         """
         self.satellite = satellite
         self.channel_resolution = channel_resolution
@@ -164,7 +152,7 @@ class GeoProjection(object):
             self.satellite_height = 35785831
 
     def as_cartopy_crs(self):
-        """Return this projection as a Cartopy CRS instance"""
+        """Return this projection as a Cartopy CRS instance."""
         import iris.exceptions as iexcept
         import cartopy.crs as ccrs
         proj = ccrs.Geostationary(central_longitude=self.sub_lon,
@@ -188,24 +176,21 @@ class GeoProjection(object):
         return proj
 
     def forward_projection(self, lons_and_lats):
-        """
-        Convert lons/lats to intermediate coords and col/line vals
+        """Convert lons/lats to intermediate coords and col/line vals
         (4.4.4 of [1]). Assumes lons/lats are in degrees, and lons
         in range -180 to 180.
 
         Method copied from Fortran:
             SpsMod_Coordinates/Sps_GeostationaryProjection.inc
-
-        Columns/lines are 1-based (not 0-based as in Python)
+            Columns/lines are 1-based (not 0-based as in Python)
 
         Args:
+            lons_and_lats (ndarray): 2D numpy array containing lons and lats
+                in degrees, stacked 1D arrays so size of 2nd array is 2, with
+                lons = lons_and_lats[:, 0], lats = lons_and_lats[:, 1].
 
-        * lons_and_lats (numpy ndarray):
-            2D numpy array containing lons and lats in degrees,
-            stacked 1D arrays so size of 2nd array is 2, with
-            lons = lons_and_lats[:, 0], lats = lons_and_lats[:, 1]
-
-        Returns 4-element tuple of 1D arrays: x, y, columns, lines
+        Returns:
+            tuple: 4-element tuple of 1D arrays: x, y, columns, lines.
 
         """
         errmsg = ("lons_and_lats should be numpy array, 2 dims, second"
@@ -267,14 +252,18 @@ class GeoProjection(object):
         return (x, y, cols, lines)
 
     def inverse_projection(self, cols_and_lines=None, maxlon=None):
-        """
-        Generate lat, lon coords (4.4.3.2 of [1])
+        """Generate lat, lon coords (4.4.3.2 of [1]).
 
         Method copied from Fortran:
             SpsMod_Coordinates/Sps_GeostationaryProjection.inc
 
-        Returns a two-element tuple containing same-shape
-        1D arrays for lons and lats (in degrees).
+        Args:
+            cols_and_lines (None, optional): Description
+            maxlon (None, optional): Description
+
+        Returns:
+            tuple: a two-element tuple containing same-shape 1D arrays for
+            lons and lats (in degrees).
 
         """
         import warnings
@@ -358,8 +347,7 @@ class GeoProjection(object):
         return (lons, lats)
 
     def iris_cube(self, general_info=None, HRV_block=None, **kwargs):
-        """
-        Return an Iris cube for this Geo projection.
+        """Return an Iris cube for this Geo projection.
 
         Add data to the cube by specifying the keyword argument 'data',
         e.g.:
@@ -374,14 +362,16 @@ class GeoProjection(object):
         the SEVIRI HRV grid. A separate cube needs to be created
         for another block (e.g. South).
 
-        Kwargs :
+        Args:
+            general_info (np array with 'general info' dtype), optional):
+                GeneralInfo data structure from SPS slotstore. Required
+                if this cube is intended for SEVIRI HRV data.
+            HRV_block (string 'Upper' or 'Lower', optional): Specify which
+                SEVIRI HRV block to define.
+            **kwargs: Description
 
-        * general_info (np array with 'general info' dtype)
-            GeneralInfo data structure from SPS slotstore. Required
-            if this cube is intended for SEVIRI HRV data.
-
-        * HRV_block (string 'Upper' or 'Lower')
-            Specify which SEVIRI HRV block to define.
+        Returns:
+            iris.cube.Cube: Description
 
         """
         import iris
@@ -465,8 +455,7 @@ class GeoProjection(object):
 
 
 def find_projections():
-    """
-    Cartopy projection generator
+    """Cartopy projection generator.
 
     Yields:
         generator: cartopy projections
@@ -478,8 +467,7 @@ def find_projections():
 
 
 def get_ccrs_list():
-    """
-    Get a list of all available projections in cartopy
+    """Get a list of all available projections in cartopy.
 
     Returns:
         list: sorted list of available cartopy projections
@@ -501,9 +489,7 @@ def print_cartopy_projections():
 
 
 def geo_extent(satellite='MSG'):
-    """
-    Get Geostationary projection extent for specific satellite
-    for cartopy coordinate reference system.
+    """Get Geostationary projection extent for specific satellite.
 
     Note: For MSG, there is 1 pixel offset before/after 6 Dec 2017.
 
@@ -517,7 +503,6 @@ def geo_extent(satellite='MSG'):
             GOES15 - Geostationary Operational Environmental Satellite (135W)
             GOES17 - Geostationary Operational Environmental Satellite (137W)
 
-
     Returns:
         tuple: (x0, x1, y0, y1) geostationary projection extent in
             X and Y direction.
@@ -528,8 +513,7 @@ def geo_extent(satellite='MSG'):
 
 
 def get_dust_rgb(h5handle, stride=(1, 1), satellite='MSG', **kw):
-    """
-    Scale channel components for dust RGB (range from 0.0 to 1.0)
+    """Scale channel components for dust RGB (range from 0.0 to 1.0).
 
     Args:
         h5handle (h5Parse object): File handler for hdf5 file
@@ -622,8 +606,7 @@ def plotx(filename, add_cbar=False,
           xglocs=None, yglocs=None, gl_font=None, glw=0.5,
           tag_fig=None, tag_col='k', title=None, figsize=(6, 6),
           save_fig=None, ax=None, **kw):
-    """
-    Display 2D arrays from geostationary Slotstore file.
+    """Display 2D arrays from geostationary Slotstore file.
 
     Args:
         filename (str): Slotstore (hdf5) filename.
@@ -680,6 +663,7 @@ def plotx(filename, add_cbar=False,
         NotImplementedError: If Projection is not one of the following
             Geostationary, PlateCarree, Mercator
         ValueError: If dataset_path is missing or incorrect or ambiguous
+
     """
     import matplotlib.pyplot as plt
     import cartopy.feature as cfeature
@@ -917,7 +901,6 @@ def plotx(filename, add_cbar=False,
 
 
 class MSG(object):
-
     """
     Warning! The software is for use with MSG data only and will not work in
     the given implementation for Meteosat first generation data.
@@ -980,8 +963,7 @@ class MSG(object):
         self.filename = None
 
     def geo2pix(self, lon, lat):
-        """
-        Returns the pixel column and row number of an MSG image for a given
+        """Return the pixel column and row number of an MSG image for a given
         pair of longitude, latitude values.
 
         Note: calculation based on the formulae given in Ref [1]
@@ -1044,8 +1026,7 @@ class MSG(object):
         return col.astype(int), row.astype(int)
 
     def pix2geo(self, col, row, dtype='float64'):
-        """
-        Calculate the longitude and latitude value of a pixel on MSG disc
+        """Calculate the longitude and latitude value of a pixel on MSG disc
         given the column and row index of that pixel.
 
         Args:
@@ -1104,11 +1085,9 @@ class MSG(object):
 
     def fulldisc2xyz(self, fd_array, missing_value=RMDI, vname='data',
                      xydtype='float64'):
-        """
-        Extract valid pixels from a SEVIRI full-disc array and return a
+        """Extract valid pixels from a SEVIRI full-disc array and return a
         dictionary of valid data and geographic coordinates for corresponding
         pixel column and rows.
-
 
         Args:
             fd_array (2d_array): SEVIRI full disc array of shape (3712, 3712)
@@ -1128,8 +1107,7 @@ class MSG(object):
         return {vname: fd_array[w], 'lon': lon.data, 'lat': lat.data}
 
     def extract(self, filename, dsname, stride=(1, 1)):
-        """
-        Extract data from a slotstore dataset.
+        """Extract data from a slotstore dataset.
 
         Args:
             filename (str): Slotstore filename
@@ -1146,8 +1124,7 @@ class MSG(object):
 
 
 def wrap_lon(longitude, hemisphere=False):
-    """
-    Converts Longitude values in an array range from [-180:180] to [0:360]
+    """Converts Longitude values in an array range from [-180:180] to [0:360]
     (sphere) or vice-versa (hemisphere).
 
     Args:

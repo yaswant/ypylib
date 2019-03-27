@@ -14,8 +14,7 @@ from scipy.ndimage.filters import uniform_filter1d
 
 
 def scale_range(input, min, max):
-    """
-    scale an input array-like to a minimum and maximum number
+    """Scale an input array-like to a minimum and maximum number
     the input array must be of a floating point array
     if you have a non-floating point array, convert to floating using
     `astype('float')`
@@ -96,8 +95,7 @@ def smooth(x, window_len=11, window='hanning'):
 
 
 def running_mean(x, N):
-    """
-    Calaulcte running average from a series (x) using a window size (N)
+    """Calaulcte running average from a series (x) using a window size (N).
 
     Parameters
     ----------
@@ -110,8 +108,7 @@ def running_mean(x, N):
 
 
 def stat2(x, y):
-    """
-    Statistical comparison between two series.
+    """Statistical comparison between two series.
 
     For verification of prediction against truth use x as truth and y as
     predicted variable.
@@ -284,10 +281,9 @@ def stat2(x, y):
 
 
 def bin_xyz(x, y, z, delta=(1., 1.), limit=None, globe=False, order=False):
-    """
-    Bin (average) irregular 1D data (triplets) on to 2D plane
+    """Bin (average) irregular 1D data (triplets) on to 2D plane.
 
-    *** DEPRECATED *** Use ypylub.utils.XYZ(...).griddata()
+    *** DEPRECATED *** Use ypylib.utils.XYZ(...).griddata()
 
     Args:
      * x array_like, shape(N,) An array containing the x coordinates of the
@@ -350,13 +346,13 @@ def bin_xyz(x, y, z, delta=(1., 1.), limit=None, globe=False, order=False):
 
 
 def creategrid(x1, x2, y1, y2, dx, dy, mesh=True):
-    '''Output grid within geo-bounds and specific cell size.
+    """Output grid within geo-bounds and specific cell size.
 
     Args:
      * x1, x2 (real) values of lower, upper limits of X (longitude)
      * y1, y2 (real) values of lower, upper limits of Y (latitude)
      * dx, dy (real) X (longitude), Y (latitude) grid size
-    '''
+    """
     x1, x2 = np.floor(x1), np.ceil(x2)
     y1, y2 = np.floor(y1), np.ceil(y2)
 
@@ -377,7 +373,7 @@ def creategrid(x1, x2, y1, y2, dx, dy, mesh=True):
 
 
 def josephus(n, k):
-    '''Josephus circular elimination (eliminate every kth item) from a sample
+    """Josephus circular elimination (eliminate every kth item) from a sample
     of n.
 
     f(n,k) = (f(n-1,k)+k) mod n), with f(1,k)=0
@@ -386,7 +382,7 @@ def josephus(n, k):
     Args:
      * n number of samples
      * k number of items
-    '''
+    """
 
     if n == 1:
         return 1
@@ -403,42 +399,40 @@ def josephus(n, k):
 
 
 def josephus_2(n):
-    '''Josephus circular elimination (eliminate every 2nd item) from a sample
+    """Josephus circular elimination (eliminate every 2nd item) from a sample
     of n.
 
     f(n) = 2(n - 2^log2(n)) + 1
 
     Args:
      * n number of sample
-    '''
+    """
     return 2 * (int(n) - 2 ** (int(log(n, 2)))) + 1
 
 
 def bias(targets, predictions):
-    '''mean bias between two series
-    '''
+    """Mean bias between two series."""
     return np.nanmean(predictions - targets)
 
 
 def rmse(targets, predictions):
-    '''root-mean-squared error between two series
-    '''
+    """Root-mean-squared error between two series."""
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
 def normalise(data):
-    '''Normalise original data between 0 and 1 prange
+    """Normalise original data between 0 and 1 prange.
 
     Args:
      * data array or list of original data
-    '''
+    """
     normalised = np.asarray(data)
     return (normalised - normalised.min()) / \
         (normalised.max() - normalised.min())
 
 
 def nrand(n=5, low=1, high=49):
-    '''Creates n random integers between low and high
+    """Create N random integers between low and high.
 
     Args:
      * low, integer, lower limit
@@ -447,7 +441,7 @@ def nrand(n=5, low=1, high=49):
 
     Returns:
      * n random numbers in [low, high] range
-   '''
+    """
     return [randint(low, high) for _ in range(0, n)]
 
 

@@ -15,8 +15,7 @@ import iris.quickplot as qplt
 
 
 def coord_rot2reg(rotated_lons, rotated_lats, pole_lon=177.5, pole_lat=37.5):
-    """
-    Convert coordinate values from rotated pole grid to regular grid.
+    """Convert coordinate values from rotated pole grid to regular grid.
 
     Parameters
     ----------
@@ -37,8 +36,7 @@ def coord_rot2reg(rotated_lons, rotated_lats, pole_lon=177.5, pole_lat=37.5):
 
 
 def coord_reg2rot(lons, lats, pole_lon=177.5, pole_lat=37.5):
-    """
-    Convert coordinate values from regular grid to rotated pole grid.
+    """Convert coordinate values from regular grid to rotated pole grid.
 
     Parameters
     ----------
@@ -59,8 +57,7 @@ def coord_reg2rot(lons, lats, pole_lon=177.5, pole_lat=37.5):
 
 
 def reg_2dcube_template(latlim=None, lonlim=None, nlat=None, nlon=None):
-    """
-    Create a 2-dimensional cube template with regular grid coordinates.
+    """Create a 2-dimensional cube template with regular grid coordinates.
 
     Parameters
     ----------
@@ -89,8 +86,7 @@ def reg_2dcube_template(latlim=None, lonlim=None, nlat=None, nlon=None):
 
 def reg_cube_template(rot_cube, latlim=None, lonlim=None,
                       nlat=None, nlon=None, nlev=None):
-    """
-    Create a cube template with regular grid coordinates.
+    """Create a cube template with regular grid coordinates.
 
     Parameters
     ----------
@@ -173,8 +169,7 @@ def reg_cube_template(rot_cube, latlim=None, lonlim=None,
 
 def rotpol2regular(rot_cube, nearest=False,
                    latlim=None, lonlim=None, nlat=None, nlon=None):
-    """
-    convert a cube from rotated pole grid to regular grid.
+    """convert a cube from rotated pole grid to regular grid.
 
     Parameters
     ----------

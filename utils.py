@@ -48,7 +48,6 @@ log.basicConfig(
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
-__email__ = "yaswant.pradhan@metoffice.gov.uk"
 
 
 class Convert(object):
@@ -93,8 +92,7 @@ class Convert(object):
         return self.value * 1.8 + 32
 
     def solzen2airmass(self):
-        """
-        Solar zenith angle (degrees) to Airmass.
+        """Solar zenith angle (degrees) to Airmass.
 
         Air Mass is the path length which light takes through the atmosphere
         normalized to the shortest possible path length (ie, when the sun is
@@ -124,8 +122,7 @@ class Convert(object):
 
 
 class List(list):
-    """
-    Create a custom List object to which user attributes can be added.
+    """Create a custom List object to which user attributes can be added.
 
     Parameters
     ----------
@@ -161,12 +158,9 @@ class List(list):
 
 
 class XYZ(object):
-    """
-    Discrete triplet data (x, y, z) analyser
-    """
+    """Discrete triplet data (x, y, z) analyser."""
     def __init__(self, x, y, z):
-        """
-        XYZ Constructor
+        """XYZ Constructor.
 
         Parameters
         ----------
@@ -196,26 +190,19 @@ class XYZ(object):
         return self
 
     def _get_extent(self):
-        """
-        Get extent for x and y values
-        """
+        """Get extent for x and y values."""
         return [[self.x.min(), self.x.max()], [self.y.min(), self.y.max()]]
 
     def _get_latts(self, spacing):
-        """
-        Get latitude grid mark locations
-        """
+        """Get latitude grid mark locations."""
         return np.arange(-90., 99., spacing)
 
     def _get_lonts(self, spacing):
-        """
-        Get longitude grid mark locations
-        """
+        """Get longitude grid mark locations."""
         return np.arange(-180., 181., spacing)
 
     def bindata(self, **kw):
-        """
-        Bin irregular 1D data (triplets) on to 2D plane.
+        """Bin irregular 1D data (triplets) on to 2D plane.
 
         Deprecated, use griddata with 'mean' method instead.
 
@@ -285,8 +272,8 @@ class XYZ(object):
             return Hv / Hn, xc, yc
 
     def griddata(self, method='mean', **kw):
-        """
-        Compute a bidimensional binned statistic for one or more sets of data.
+        """Compute a bidimensional binned statistic for one or more sets of
+        data.
 
         This is a generalization of a histogram2d function implemented in
         bindata. A histogram divides the space into bins, and returns the
@@ -377,9 +364,7 @@ class XYZ(object):
         return self.G, self.xc, self.yc
 
     def plot(self, **kw):
-        """
-        Line plot (x, y, z) as series.
-        """
+        """Line plot (x, y, z) as series."""
         _f, ax = plt.subplots(1, figsize=self.figsize)
         ax.plot(self.x.ravel(), c='r', label='x', **kw)
         ax.plot(self.y.ravel(), c='g', label='y', **kw)
@@ -389,9 +374,7 @@ class XYZ(object):
         return plt
 
     def scatter(self, **kw):
-        """
-        Scatter plot (x, y, z) data triplets.
-        """
+        """Scatter plot (x, y, z) data triplets."""
         _f, ax = plt.subplots(1, figsize=self.figsize)
         im = ax.scatter(
             self.x, self.y, c=self.z, lw=0, rasterized=True, **kw)
@@ -403,8 +386,7 @@ class XYZ(object):
         return plt
 
     def hexbin(self, **kw):
-        """
-        Hexagon plot (x, y, z) data triplets.
+        """Hexagon plot (x, y, z) data triplets.
 
         hexbin is a bivariate histogram in which the xy-plane is tessellated
         by a regular grid of hexagons.
@@ -417,8 +399,7 @@ class XYZ(object):
         return plt
 
     def mapdata(self, use_cartopy=False, **kw):
-        """
-        Render xyz data on map.
+        """Render xyz data on map.
 
         Parameters
         ----------
@@ -911,8 +892,7 @@ class XYZ(object):
 
 
 def aot2pm25(aot, H, S):
-    """
-    Convert AOT to PM2.5
+    """Convert AOT to PM 2.5.
 
     AOD and PM2.5 relationship (Hoff and Christopher, 2009):
         `AOT = PM2.5*H*S`
@@ -936,8 +916,7 @@ def aot2pm25(aot, H, S):
 
 
 def autoswitch_backend(verbose=False):
-    """
-    Automatically switch backend to Agg if using a non-interactive or
+    """Automatically switch backend to Agg if using a non-interactive or
     non-DISPLAY system.
 
     """
@@ -949,9 +928,7 @@ def autoswitch_backend(verbose=False):
 
 
 def csv2nc(csvfile, ncfile=None):
-    """
-    Convert csv file to netcdf.
-    """
+    """Convert csv file to netcdf."""
     import pandas as pd
     from netCDF4 import Dataset
 
@@ -969,8 +946,7 @@ def csv2nc(csvfile, ncfile=None):
 
 
 def dialog_pickfiles(initial_dir=None, extension=None):
-    """
-    Dialog picker for one or more files.
+    """Dialog picker for one or more files.
 
     Parameters
     ----------
@@ -1007,8 +983,7 @@ def dialog_pickfiles(initial_dir=None, extension=None):
 
 
 def dict2csv(dictionary, filename, orient='columns', index=False):
-    """
-    Write csv file from a dictionary.
+    """Write csv file from a dictionary.
 
     Parameters
     ----------
@@ -1033,8 +1008,7 @@ def dict2csv(dictionary, filename, orient='columns', index=False):
 
 
 def dict2nc(dictionary, ncfile, zlib=True, attr=None):
-    """
-    Convert a dictionary to simple netCDF (nf4 with compression enabled).
+    """Convert a dictionary to simple netCDF (nf4 with compression enabled).
 
     Warning: it assumes all datasets in the dictionary are 1D floating point
     arrays and of equal length. Do not use this function for complex
@@ -1080,8 +1054,7 @@ def dict2nc(dictionary, ncfile, zlib=True, attr=None):
 
 
 def doy(year=None, month=None, day=None):
-    """
-    Calculate serial day of year
+    """Calculate serial day of year (1-366).
 
     Parameters
     ----------
@@ -1105,15 +1078,13 @@ def doy(year=None, month=None, day=None):
 
 
 def doy2ymd(year, dayofyear):
-    """
-    Get date object from year and seq day of year.
-    """
+    """Get date object from year and seq day of year."""
     return datetime(year, 1, 1) + timedelta(dayofyear - 1)
 
 
 def dt2et(date_time, start_date, date_format='%Y-%m-%d %H:%M:%S'):
-    """
-    Get list of datetime objects for elapsed seconds from a given start date.
+    """Get list of datetime objects for elapsed seconds from a given start
+    date.
 
     Note: this function ignores microseconds.
 
@@ -1147,8 +1118,7 @@ def dt2et(date_time, start_date, date_format='%Y-%m-%d %H:%M:%S'):
 
 
 def dt2yjd(in_date, in_fmt='%Y%m%d', sep=''):
-    """
-    Convert Date to Year and Dayofyear.
+    """Convert Date to Year and Dayofyear.
 
     Parameters
     ----------
@@ -1177,8 +1147,8 @@ def dt2yjd(in_date, in_fmt='%Y%m%d', sep=''):
 
 
 def et2dt(elapsed_seconds, start_date, date_format='%Y-%m-%d'):
-    """
-    Get list of datetime objects for elapsed seconds from a given start date.
+    """Get list of datetime objects for elapsed seconds from a given start
+    date.
 
     Parameters
     ----------
@@ -1195,9 +1165,9 @@ def et2dt(elapsed_seconds, start_date, date_format='%Y-%m-%d'):
 
 
 def ext2vis(ext):
-    """
-    Visibility V, as a function of the extinction coefficient ext (using
+    """Visibility V, as a function of the extinction coefficient ext (using
     Koschmieder's equation)
+
         Vk = 3.912/ext
 
     ext: average extinction coefficient of the aerosol over the visual range
@@ -1225,8 +1195,7 @@ def ext2vis(ext):
 
 
 def format_date(in_date=None, in_format='%Y%m%d', out_format='%Y/%j'):
-    """
-    Convert date string to desired format.
+    """Convert date string to desired format.
 
     Parameters
     ----------
@@ -1252,8 +1221,7 @@ def format_date(in_date=None, in_format='%Y%m%d', out_format='%Y/%j'):
 
 
 def frange(start=0, stop=None, step=1.0):
-    """
-    List of floating point values.
+    """List of floating point values.
 
     Parameters
     ----------
@@ -1298,15 +1266,12 @@ def frange(start=0, stop=None, step=1.0):
 
 
 def freq2wl(freq):
-    """
-    Convert frequency (cm-1) to wavelength (microns).
-    """
+    """Convert frequency (cm-1) to wavelength (microns)."""
     return 1e4 / freq
 
 
 def getnn(data1, data2, r, k=5, p=2.0, eps=0.0, n_proc=1):
-    """
-    Search nearest neighbours between two coordinate catalogues.
+    """Search nearest neighbours between two coordinate catalogues.
 
     See https://docs.scipy.org/doc/scipy/reference/generated/
     scipy.spatial.cKDTree.query.html
@@ -1383,8 +1348,7 @@ def getnn(data1, data2, r, k=5, p=2.0, eps=0.0, n_proc=1):
 
 
 def get_public_methods(class_name):
-    """
-    Returns public method names in a class.
+    """Returns public method names in a class.
 
     Parameters
     ----------
@@ -1401,8 +1365,7 @@ def get_public_methods(class_name):
 
 
 def ll_parse(ll_string):
-    """
-    Parse a coordinate string to equivalent number.
+    """Parse a coordinate string to equivalent number.
 
     Parameters
     ----------
@@ -1419,8 +1382,7 @@ def ll_parse(ll_string):
 
 
 def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
-    """
-    Load variables from a netCDF file to a dictionary.
+    """Load variables from a netCDF file to a dictionary.
 
     Parameters
     ----------
@@ -1498,9 +1460,7 @@ def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
 
 
 def locate(array, value, epsilon=1.0):
-    """
-    Locate the index of a value in an array.
-    """
+    """Locate the index of a value in an array."""
     inarray = np.asanyarray(array, dtype=array.dtype)
     loc = (np.abs(value - inarray)).argmin()
     if np.abs(value - inarray[loc]) < epsilon:
@@ -1510,8 +1470,7 @@ def locate(array, value, epsilon=1.0):
 
 
 def merge_dicts(dict_seq):
-    """
-    Merge dictionaries while keeping the original keys and values of each
+    """Merge dictionaries while keeping the original keys and values of each
     dictionary.
 
     Parameters
@@ -1538,8 +1497,7 @@ def merge_dicts(dict_seq):
 
 
 def mkdirp(path):
-    """
-    Make parent directories as needed, no error if existing.
+    """Make parent directories as needed, no error if existing.
 
     Parameters
     ----------
@@ -1561,8 +1519,7 @@ def mkdirp(path):
 
 def modify_cmap(index_list=None, rgba_list=None, N=None, in_cmap=None,
                 name='Custom Cmap'):
-    """
-    Modify rgba values of an existing colormap.
+    """Modify rgba values of an existing colormap.
 
     Parameters
     ----------
@@ -1604,8 +1561,7 @@ def modify_cmap(index_list=None, rgba_list=None, N=None, in_cmap=None,
 
 
 def nearest(array, value, location=False):
-    """
-    Returns the nearest value in an array.
+    """Returns the nearest value in an array.
 
     Parameters
     ----------
@@ -1631,15 +1587,12 @@ def nearest(array, value, location=False):
 
 
 def pct2num(string):
-    """
-    Convert percent string to number.
-    """
+    """Convert percent string to number."""
     return float(string.strip('%')) / 100
 
 
 def purge(dsrc, ext):
-    """
-    Delete all files with matching extension in a directory.
+    """Delete all files with matching extension in a directory.
 
     Parameters
     ----------
@@ -1654,8 +1607,7 @@ def purge(dsrc, ext):
 
 
 def read_nc3(ncfile, var=[], version=1):
-    """
-    Read variables from a NetCDF-3 (classic) file.
+    """Read variables from a NetCDF-3 (classic) file.
 
     Parameters
     ----------
@@ -1682,8 +1634,8 @@ def read_nc3(ncfile, var=[], version=1):
 
 
 def resize_cbar_function(ax, cax, location='bottom', pad='10%', size='4%'):
-    """
-    Returns a function to automatically resize the colorbar for cartopy plots.
+    """Returns a function to automatically resize the colorbar for cartopy
+    plots.
 
     Parameters
     ----------
@@ -1743,8 +1695,7 @@ def resize_cbar_function(ax, cax, location='bottom', pad='10%', size='4%'):
 
 
 def reverse_cmap(cmap, N=256):
-    """
-    Reverse a matplotlib colormap.
+    """Reverse a matplotlib colormap.
 
     Parameters
     ----------
@@ -1772,8 +1723,7 @@ def reverse_cmap(cmap, N=256):
 
 
 def strmatch(patterns, filename, mutually_inclusive=False):
-    """
-    Saerch lines with smatching strings in a text file.
+    """Saerch lines with smatching strings in a text file.
 
     Parameters
     ----------
@@ -1802,6 +1752,7 @@ def strmatch(patterns, filename, mutually_inclusive=False):
     ...     # commening out sensintive info from testing
     ...     # print(cnt, row, line, end='')
     ...     pass
+
     """
     cnt = 0
     row = 0
@@ -1823,8 +1774,7 @@ def strmatch(patterns, filename, mutually_inclusive=False):
 
 
 def symlinkf(fsrc, fdst):
-    """
-    Create a symbolic link pointing to fsrc named fdst.
+    """Create a symbolic link pointing to fsrc named fdst.
 
     This is a os.symlink wrapper which removes existing destination files
 
@@ -1846,8 +1796,7 @@ def symlinkf(fsrc, fdst):
 
 
 def seqdate(start_date, end_date, in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
-    """
-    Generate sequence of dates between two dates.
+    """Generate sequence of dates between two dates.
 
     Parameters
     ----------
@@ -1873,8 +1822,7 @@ def seqdate(start_date, end_date, in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
 
 
 def transform_basemap_coord(lon, lat, to_proj):
-    """
-    Transform latitude, longitude values to specific basemap projection.
+    """Transform latitude, longitude values to specific basemap projection.
 
     Parameters
     ----------
@@ -1908,8 +1856,7 @@ def transform_basemap_coord(lon, lat, to_proj):
 
 
 def transform_cartopy_coord(x, y, from_proj, to_proj, truncate_xy=None):
-    """
-    Convert between projections using Cartopy tranform_points.
+    """Convert between projections using Cartopy tranform_points.
 
     Parameters
     ----------
@@ -1936,8 +1883,7 @@ def transform_cartopy_coord(x, y, from_proj, to_proj, truncate_xy=None):
 
 
 def v_locate(array, value):
-    """
-    v_locate function finds the intervals within a given monotonic vector
+    """v_locate function finds the intervals within a given monotonic vector
     that brackets a given set of one value. Much faster than locate when the
     array is sorted (or monotonically increasing).
     """
@@ -1949,9 +1895,7 @@ def v_locate(array, value):
 
 
 def wl2freq(wl):
-    """
-    Convert wavelength (microns) to frequency (cm-1).
-    """
+    """Convert wavelength (microns) to frequency (cm-1)."""
     return 1e4 / wl
 
 
@@ -1973,8 +1917,7 @@ def write_csv(filename, data=None, header=None, append=False):
 
 
 def yjd2dt(yjd, fmt='%Y%j'):
-    """
-    Converts date string in YYYYjjj to datetime object.
+    """Converts date string in YYYYjjj to datetime object.
 
     Parameters
     ----------
@@ -1993,16 +1936,13 @@ def yjd2dt(yjd, fmt='%Y%j'):
 
 
 class Integer(object):
-    """
-    The usual single-bit operations will work on any Python integer.
-    """
+    """The usual single-bit operations will work on any Python integer."""
     def __init__(self, int_type):
         super(Integer, self).__init__()
         self.int_type = int_type
 
     def test_bit(self, offset, mask_type=None):
-        """
-        test_bit() returns a non-zero result, 2**offset, if the bit at
+        """test_bit() returns a non-zero result, 2**offset, if the bit at
         'offset' is one.
 
         Parameters
@@ -2041,22 +1981,17 @@ class Integer(object):
             return(self.int_type & mask)
 
     def set_bit(self, offset):
-        """
-        set_bit() returns an integer with the bit at 'offset' set to 1.
-        """
+        """set_bit() returns an integer with the bit at 'offset' set to 1."""
         mask = 1 << offset
         return(self.int_type | mask)
 
     def clear_bit(self, offset):
-        """
-        clear_bit() returns an integer with the bit at 'offset' cleared.
-        """
+        """clear_bit() returns an integer with the bit at 'offset' cleared."""
         mask = ~(1 << offset)
         return(self.int_type & mask)
 
     def toggle_bit(self, offset):
-        """
-        toggle_bit() returns an integer with the bit at 'offset' inverted,
+        """toggle_bit() returns an integer with the bit at 'offset' inverted,
         0 -> 1 and 1 -> 0.
         """
         mask = 1 << offset
@@ -2064,8 +1999,7 @@ class Integer(object):
 
 
 def testBit(int_type, offset):
-    """
-    testBit() returns a non-zero result, 2**offset, if the bit at 'offset'
+    """testBit() returns a non-zero result, 2**offset, if the bit at 'offset'
     is one.
     """
     mask = 1 << offset
@@ -2073,24 +2007,19 @@ def testBit(int_type, offset):
 
 
 def setBit(int_type, offset):
-    """
-    setBit() returns an integer with the bit at 'offset' set to 1.
-    """
+    """setBit() returns an integer with the bit at 'offset' set to 1."""
     mask = 1 << offset
     return(int_type | mask)
 
 
 def clearBit(int_type, offset):
-    """
-    clearBit() returns an integer with the bit at 'offset' cleared.
-    """
+    """clearBit() returns an integer with the bit at 'offset' cleared."""
     mask = ~(1 << offset)
     return(int_type & mask)
 
 
 def toggleBit(int_type, offset):
-    """
-    toggleBit() returns an integer with the bit at 'offset' inverted,
+    """toggleBit() returns an integer with the bit at 'offset' inverted,
     0 -> 1 and 1 -> 0.
     """
     mask = 1 << offset

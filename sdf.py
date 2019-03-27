@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Scientific Data Format parser
+Scientific Data Format parser.
 
 """
 from __future__ import print_function
@@ -33,8 +33,7 @@ RMDI = -1073741824.0
 
 
 class h4Parse(object):
-    """
-    A pyhdf interface to parse hdf4 file.
+    """A pyhdf interface to parse hdf4 file.
 
     Examples
     --------
@@ -57,16 +56,12 @@ class h4Parse(object):
             self._populate_SD()
 
     def set_filename(self, filename):
-        """
-        Set or update hdf filename
-        """
+        """Set or update hdf filename."""
         self.filename = filename
         self._populate_SD()
 
     def _populate_SD(self):
-        """
-        Populate SDs and their shape attributes
-        """
+        """Populate SDs and their shape attributes."""
 
         try:
             h4 = SD(self.filename, mode=SDC.READ)
@@ -82,8 +77,7 @@ class h4Parse(object):
             raise HDF4Error('{}: {}'.format(e, self.filename))
 
     def get_sds(self, fieldnames=None):
-        """
-        Return specific or all SDS in the hdf file as dictionary.
+        """Return specific or all SDS in the hdf file as dictionary.
 
         SDS arrays can be accessed using the 'data' key. Note that no scaling
         is applied to the data in get() method (use get_scaled() to achieve
@@ -131,8 +125,7 @@ class h4Parse(object):
         return sds
 
     def get_vdata(self, VDataName):
-        """
-        Return VData (binary table) from hdf4.
+        """Return VData (binary table) from hdf4.
 
         Parameters
         ----------
@@ -167,8 +160,7 @@ class h4Parse(object):
         return vdata
 
     def get_scaled(self, fieldnames=[]):
-        """
-        Return scaled data asuming that scale_factor and add_offset are
+        """Return scaled data asuming that scale_factor and add_offset are
         available in dataset attributes.
 
         Not a general purpose method, so should be used with caution.
@@ -197,8 +189,7 @@ class h4Parse(object):
 
 
 class h5Parse(object):
-    """
-    Represents structure of a single (simple) HDF5 file.
+    """Represents structure of a single (simple) HDF5 file.
 
     Last update: June 2017 yaswant.pradhan
 
@@ -208,8 +199,7 @@ class h5Parse(object):
             reading attributes - partially/not functional yet.
     """
     def __init__(self, filename=None, **kw):
-        """
-        Initialise the HDF5 parser object.
+        """Initialise the HDF5 parser object.
 
         Parameters
         ----------
@@ -254,17 +244,13 @@ class h5Parse(object):
         return self
 
     def set_filename(self, filename):
-        """
-        Set or update hdf5 filename
-        """
+        """Set or update hdf5 filename."""
         self.filename = filename
         self._filetest()
         self._populate_items()
 
     def _filetest(self):
-        """
-        Check filename is a valid (hdf5) file
-        """
+        """Check filename is a valid (hdf5) file."""
         try:
             open(self.filename)
         except IOError as e:
@@ -275,9 +261,7 @@ class h5Parse(object):
                 raise IOError(err)
 
     def _populate_items(self):
-        """
-        Self contained function to populate items in hdf5 file
-        """
+        """Self contained function to populate items in hdf5 file."""
         def list_objects(name, obj):
             if isinstance(obj, h5py.Group):
                 self.items.append(name)
@@ -302,8 +286,7 @@ class h5Parse(object):
                 print(item)
 
     def _print_items(self, name, obj):
-        """
-        Callable function to visititems()
+        """Callable function to visititems().
 
         Note: This is the official approach to walk through h5 datatree and
         get attributes. However, failing on nc4 (h5 model) with current
@@ -324,9 +307,7 @@ class h5Parse(object):
             print("    %s: %s" % (key, val))
 
     def _print_h5_dsets(self, obj, offset=''):
-        """
-        Print data structure of a h5/nc4 file
-        """
+        """Print data structure of a h5/nc4 file."""
         if isinstance(obj, h5py.File):
             if self.verbose is True:
                 print(obj.file, '(File)', obj.name)
@@ -356,8 +337,7 @@ class h5Parse(object):
                     pass
 
     def ls(self):
-        """
-        Recursively list all items, silently ignoring links to external
+        """Recursively list all items, silently ignoring links to external
         files. This should work with h5 files with or without external links.
 
         Examples
@@ -371,9 +351,9 @@ class h5Parse(object):
             h5f.visititems(self._print_items)
 
     def lsd(self):
-        """
-        Recursively list only datasets in the file. This should work with
-        both nc4 and h5 files.
+        """Recursively list only datasets in the file.
+
+        This should work with both nc4 and h5 files.
 
         Examples
         --------
@@ -385,8 +365,7 @@ class h5Parse(object):
             self._print_h5_dsets(h5f)
 
     def lsattr(self):
-        """
-        Equivalent to ls(), but checks for h5py version and cleanly exit
+        """Equivalent to ls(), but checks for h5py version and cleanly exit
         for h5py<2.3.
 
         Note: Requires pyhdf >= 2.3
@@ -404,8 +383,8 @@ class h5Parse(object):
                   "but installed version is", h5py.version.version)
 
     def get_dslist(self):
-        """
-        Return all valid datasets in hdf5 file as a list.
+        """Return all valid datasets in hdf5 file as a list.
+
         Note: This is a redundant method now (h5_parse().dataset stores list
         of all valid datasets) but kept for backward compatibility.
 
@@ -425,8 +404,7 @@ class h5Parse(object):
         return self.datasets
 
     def get_data(self, dsname=None, verbose=False, order=False):
-        """
-        Get specific datasets from hdf5 file.
+        """Get specific datasets from hdf5 file.
 
         TODO: A better model would be to return [list of] dicts and retain
         original data attributes such as scale_factor, add_offset, etc.
@@ -473,9 +451,7 @@ class h5Parse(object):
         return odict
 
     def get_attr(self, dsname=None):
-        """
-        Get dataset attributes dictionary
-        """
+        """Get dataset attributes dictionary."""
         attr = {}
 
         if dsname is None:
@@ -503,8 +479,7 @@ class h5Parse(object):
 
 
 def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
-    """
-    Load variables from a netCDF file to a dictionary.
+    """Load variables from a netCDF file to a dictionary.
 
     Parameters
     ----------

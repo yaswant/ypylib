@@ -10,8 +10,7 @@ import numpy as np
 
 class ScalarWind(object):
 
-    """
-    ScalarWind Class method
+    """ScalarWind Class method.
 
     Attributes:
         direction (TYPE): Description
@@ -24,18 +23,17 @@ class ScalarWind(object):
         self.direction = np.array(direction)
 
     def uv(self):
-        """
-        Return zonal (u) and meridional (v) components of vector wind from
-        windspeeds and directions (degrees). u and v have same units as
-        windspeed.
+        """Return zonal (u) and meridional (v) components of vector wind from
+        windspeeds and directions (degrees).
+
+        u and v have same units as windspeed.
         """
         u = -self.speed * np.sin(np.radians(self.direction))
         v = -self.speed * np.cos(np.radians(self.direction))
         return u, v
 
     def stress(self, Cd=None, rho_air=1.3):
-        """
-        Return wind stress components (tau_u, tau_v) from wind speeds and
+        """Return wind stress components (tau_u, tau_v) from wind speeds and
         directions.
         """
         if Cd is None:
@@ -50,8 +48,7 @@ class ScalarWind(object):
         return tau_x, tau_y
 
     def drag_coeff(self):
-        """
-        Return drag coefficient (Cd) over ocean from 10m windspeed using
+        """Return drag coefficient (Cd) over ocean from 10m windspeed using
         Yelland and Taylor (1996) method.
         """
         spd = np.atleast_1d(self.speed)

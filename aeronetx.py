@@ -1,9 +1,9 @@
-"""
-:Module: ypylib.aeronetx
-Created on 20 Jan 2017 11:12:30
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
-:author: yaswant.pradhan (fra6)
-:copyright: British Crown Copyright 2017, Met Office
+"""
+AERONET data extractor
+
 """
 import os
 import linecache
@@ -13,10 +13,20 @@ from StringIO import StringIO
 from datetime import datetime, timedelta
 import pandas as pd
 from HTMLParser import HTMLParser
-# date_parse = lambda x: pd.datetime.strptime(x, "%d:%m:%Y %H:%M:%S")
+__version__ = "2017.01.1"
+__author__ = "Yaswant Pradhan"
 
 
 def date_parse(str_type, fmt="%d:%m:%Y %H:%M:%S"):
+    """Return date time parser function.
+
+    Args:
+        str_type (str): Date Time string.
+        fmt (str, optional): Format specification of str_type.
+
+    Returns:
+        TYPE: Description
+    """
     return pd.datetime.strptime(str_type, fmt)
 
 
@@ -33,9 +43,15 @@ class MLStripper(HTMLParser):
 
 
 def strip_tags(html):
-    """
-    Strip HTML from strings
+    """Strip HTML tags from string.
+
     Source: http://stackoverflow.com/questions/753052
+
+    Args:
+        html (TYPE): Description
+
+    Returns:
+        TYPE: Description
     """
     line = MLStripper()
     line.feed(html)
@@ -43,11 +59,16 @@ def strip_tags(html):
 
 
 def parse_v3_site(site, url=None):
-    """
-    Check validity of a location name against AERONET database site list at
-    https://aeronet.gsfc.nasa.gov/aeronet_locations.txt
+    """Validate AERONET v3 site name.
 
-    Returns tuple (boolean, dataframe) - Is site valid, All AERONET sites as a
+    Compares against https://aeronet.gsfc.nasa.gov/aeronet_locations.txt
+
+    Args:
+        site (TYPE): Description
+        url (None, optional): Description
+
+    Returns:
+        tuple: (boolean, dataframe) - Is site valid, All AERONET sites as a
     pandas dataframe.
 
     """
@@ -64,9 +85,8 @@ def parse_v3_site(site, url=None):
 
 
 def show_v3_site():
-    """Display AERONET locations on map."""
-    # import matplotlib as mpl
-    # import matplotlib.cm as cm
+    """Display AERONET locations on map.
+    """
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from mpl_toolkits.basemap import Basemap
@@ -104,23 +124,33 @@ def show_v3_site():
 
 def downlaod_v3_site(site, ymd=None, ymd2=None, prd='SDA15', avg='10',
                      hr1=0, hr2=23, verb=False):
-    """
-    ** Requires curl **
-    site (str) AERONET location name.
-    ymd, ymd2 (YYYYmmdd) default is for current date - 1.
-    prd (str)
-        AOD10    Aerosol Optical Depth Level 1.0
-        AOD15    Aerosol Optical Depth Level 1.5
-        AOD20    Aerosol Optical Depth Level 2.0
-        SDA10    SDA Retrieval Level 1.0
-        SDA15    SDA Retrieval Level 1.5 (default)
-        SDA20    SDA Retrieval Level 2.0
-        TOT10    Total Optical Depth based on AOD Level 1.0 (all points only)
-        TOT15    Total Optical Depth based on AOD Level 1.5 (all points only)
-        TOT20    Total Optical Depth based on AOD Level 2.0 (all points only)
-    avg (in) Data Format:
-        For All points = 10 (default)
-        For Daily average = 20
+    """Download version 3 AERONET data for a specific site.
+
+    Note: Requires curl
+
+    Args:
+        site (str): AERONET location name.
+        ymd (str, optional): Start date. Defaults to yesterday.
+        ymd2 (str, optional): End date. Defaults to yesterday.
+        prd (str, optional): AERONET Product code. One from the following:
+            AOD10 - Aerosol Optical Depth Level 1.0
+            AOD15 - Aerosol Optical Depth Level 1.5
+            AOD20 - Aerosol Optical Depth Level 2.0
+            SDA10 - SDA Retrieval Level 1.0
+            SDA15 - SDA Retrieval Level 1.5 (default)
+            SDA20 - SDA Retrieval Level 2.0
+            TOT10 - Total Optical Depth based on AOD Level 1.0 (all points)
+            TOT15 - Total Optical Depth based on AOD Level 1.5 (all points)
+            TOT20 - Total Optical Depth based on AOD Level 2.0 (all points)
+        avg (str, optional): AERONET average type:
+            10 - All points (default).
+            20 - Daily average.
+        hr1 (int, optional): Start hour.
+        hr2 (int, optional): End hour.
+        verb (bool, optional): Verbose mode.
+
+    Returns:
+        TYPE: Description
 
     """
     # Parse AERONET site first
@@ -163,44 +193,41 @@ def downlaod_v3_site(site, ymd=None, ymd2=None, prd='SDA15', avg='10',
 
 def downlaod_v3_region(llyx, uryx, ymd=None, hr1=0, ymd2=None, hr2=23,
                        prd='SDA15', avg='10', strip_html=True, verb=False):
-    """
-    ** Note: Requires curl **
+    """Download AERONET data over a rectangular geographic domain.
 
-    Parameters
-    ----------
-    llyx : sequence of floats
-        Lower-Left (Latitude, Longitude) limits for region extraction
-    uryx : sequence of floats
-        Upper-Right (Latitude, Longitude) limits for region extraction
-    ymd, ymd2 : str, optional
-        Date range (in YYYYmmdd form) to extract (default current date)
-    hr1, hr2 : int, optional
-        Hour range to extract (default 0 and 23 hrs)
-    prd : str, optional
-        Product code to download (default 'SDA15'). Accepted prd values are:
-        AOD10    Aerosol Optical Depth Level 1.0
-        AOD15    Aerosol Optical Depth Level 1.5
-        AOD20    Aerosol Optical Depth Level 2.0
-        SDA10    SDA Retrieval Level 1.0
-        SDA15    SDA Retrieval Level 1.5 (default)
-        SDA20    SDA Retrieval Level 2.0
-        TOT10    Total Optical Depth based on AOD Level 1.0 (all points only)
-        TOT15    Total Optical Depth based on AOD Level 1.5 (all points only)
-        TOT20    Total Optical Depth based on AOD Level 2.0 (all points only)
-    avg : str, optional
-        Product average indicator (default '10'). Accepted avg values are:
-        10      For All points
-        20      For Daily averages
-    strip_html : bool, optional
-        strip html tags from output (default True)
-    verb : bool, optional
-        Show curl command (default False)
+    Args:
+        llyx (sequence): Lower-Left (Latitude, Longitude) limits for region
+            extraction.
+        uryx (sequence): Upper-Right (Latitude, Longitude) limits for region
+            extraction.
+        ymd (str, optional): Start date (in YYYYmmdd form) to extract
+            (default current date).
+        hr1 (int, optional): Start hour to extract (default 0).
+        ymd2 (str, optional): End date (in YYYYmmdd form) to extract
+            (default current date).
+        hr2 (int, optional): End hour to extract (default 23).
+        prd (str, optional): Product code to download (default 'SDA15').
+            Accepted prd values are:
+            AOD10 - Aerosol Optical Depth Level 1.0
+            AOD15 - Aerosol Optical Depth Level 1.5
+            AOD20 - Aerosol Optical Depth Level 2.0
+            SDA10 - SDA Retrieval Level 1.0
+            SDA15 - SDA Retrieval Level 1.5 (default)
+            SDA20 - SDA Retrieval Level 2.0
+            TOT10 - Total Optical Depth based on AOD Level 1.0 (all points)
+            TOT15 - Total Optical Depth based on AOD Level 1.5 (all points)
+            TOT20 - Total Optical Depth based on AOD Level 2.0 (all points)
+        avg (str, optional): Product average indicator (default '10').
+            Accepted avg values are:
+            10 - All points.
+            20 - Daily averages.
+        strip_html (bool, optional): Strip HTML tags.
+        verb (bool, optional): Verbose mode.
 
-    Returns
-    -------
-    str
-        comma separated string of web data that is a very long string
-        (use parse_v3_webdata() to convert this data to pandas dataframe)
+    Returns:
+        str: comma separated string of web data that is a very long string
+        (use parse_v3_webdata() to convert this data to pandas dataframe).
+
     """
     host = 'https://aeronet.gsfc.nasa.gov/cgi-bin/print_web_data_v3'
     if ymd is None:
@@ -245,21 +272,31 @@ def downlaod_v3_region(llyx, uryx, ymd=None, hr1=0, ymd2=None, hr2=23,
         return strip_tags(recs)
 
 
-def read_data(statfile, version=2):
-    """AERONET extractor
-    Read a given AERONET AOT data file, and return it as a data-frame.
+def read_data(filename, version=2):
+    """AERONET data reader.
 
-    This returns a DataFrame containing the AERONET data, with the index
-    set to the time-stamp of the AERONET observations. Rows or columns
-    consisting entirely of missing data are removed. All other columns
-    are left as-is.
+    Read a given AERONET AOT data file, and return it as a pandas dataframe.
 
     Note: there is a column offset in AERONET Version-3 total AOD files, which
     has been reported to the AERONET web database team, so I wont use any
     hacks to deal with the staggered columns at >=Optical_Air_Mass.
+
+    Args:
+        filename (str): AERONET filename.
+        version (int, optional): AERONET version. Defaults to 2.
+
+    Returns:
+        pandas.DataFrame: DataFrame containing the AERONET data, with the index
+        set to the time-stamp of the AERONET observations. Rows or columns
+        consisting entirely of missing data are removed. All other columns
+        are left as-is.
+
+    Raises:
+        ValueError: If version other than 2 or 3.
+
     """
-    # identify Aeronet product name
-    file_info = linecache.getlines(statfile)[0:7]
+    # Identify AERONET product name
+    file_info = linecache.getlines(filename)[0:7]
     for line in file_info:
         if 'Version' in line:
             prodname = str.strip(line)
@@ -269,24 +306,28 @@ def read_data(statfile, version=2):
         skipr = 4
         na = 'N/A'
         renameCol = 'Last_Processing_Date(dd/mm/yyyy)'
-        df = pd.read_csv(statfile, skiprows=skipr, na_values=[na],
+        df = pd.read_csv(filename, skiprows=skipr, na_values=[na],
                          parse_dates={'date_time': [0, 1]},
                          date_parser=date_parse)
     elif version == 3:  # read version 3 data
         skipr = 6
         na = -999.0
         renameCol = 'Last_Date_Processed)'
+        #
         # read actual header in the Aeronet file
         # add extra column to header so that V3 ragged dataset (ie without
         # headers) can be read correctly as data frame
-        hdr = (pd.read_csv(statfile, skiprows=skipr, nrows=0)).columns.tolist()
+        #
+        hdr = (pd.read_csv(filename, skiprows=skipr, nrows=0)).columns.tolist()
+        #
         # update header with dummy wavelength columns
+        #
         hdr[-1] = 'w1'
         hdr.extend(['w' + x for x in map(str, range(2, 11))])
-        # hdr_list.extend(['w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9'])
-
+        #
         # read values into data frame
-        df = pd.read_csv(statfile, skiprows=skipr + 1, names=hdr,
+        #
+        df = pd.read_csv(filename, skiprows=skipr + 1, names=hdr,
                          na_values=[na], parse_dates={'date_time': [0, 1]},
                          date_parser=date_parse)
     else:
@@ -294,15 +335,25 @@ def read_data(statfile, version=2):
 
     df = df.set_index('date_time')
     # del df['Julian_Day']
-
-    # Drop any rows that are all NaN and any columns that are all NaN and then
-    # sort by the index
+    #
+    # Drop any rows that are all NaN and any columns that are all NaN and
+    # then sort by the index
+    #
     an = (df.dropna(axis=1, how='all').dropna(axis=0, how='all').
           rename(columns={renameCol: 'Last_Processing_Date'}).sort_index())
     return an
 
 
 def parse_v3_web_data(web_data, skip_rows=6):
+    """Parse AERONET version 3 web data.
+
+    Args:
+        web_data (TYPE): Description
+        skip_rows (int, optional): Description
+
+    Returns:
+        TYPE: Description
+    """
     skipr = skip_rows
     if len(web_data) < 100:
         print '** No records in the web_data'
@@ -325,6 +376,22 @@ def parse_v3_web_data(web_data, skip_rows=6):
 
 def plot_v3_site_sda(site, ymd=None, ymd2=None, hr1=0, hr2=23,
                      prd='SDA15', avg='10', hourly=False, verb=False):
+    """Plot AERONET version 3 SDA data.
+
+    Args:
+        site (TYPE): Description
+        ymd (None, optional): Description
+        ymd2 (None, optional): Description
+        hr1 (int, optional): Description
+        hr2 (int, optional): Description
+        prd (str, optional): Description
+        avg (str, optional): Description
+        hourly (bool, optional): Description
+        verb (bool, optional): Description
+
+    Returns:
+        TYPE: Description
+    """
     import math
     import warnings
     with warnings.catch_warnings():
@@ -474,7 +541,21 @@ def read_all_sites_times_daily_averages(filename, skip_rows=6,
                                         ymd1=None, ymd2=None,
                                         lat1=-90, lat2=90,
                                         lon1=-180, lon2=180):
+    """Read AERONET daily average data.
 
+    Args:
+        filename (TYPE): Description
+        skip_rows (int, optional): Description
+        ymd1 (None, optional): Description
+        ymd2 (None, optional): Description
+        lat1 (TYPE, optional): Description
+        lat2 (int, optional): Description
+        lon1 (TYPE, optional): Description
+        lon2 (int, optional): Description
+
+    Returns:
+        TYPE: Description
+    """
     df = pd.read_csv(filename, skiprows=skip_rows, na_values=-999.0)
     return df
     pass
@@ -519,21 +600,21 @@ if __name__ == "__main__":
 
     # plot_v3_site_sda('Capo_Verde', ymd='20150812', ymd2='20150822')
 
-#     locs = ['Praia', 'Calhau', 'Capo_Verde',
-#             'Teide', 'Izana', 'La_Laguna', 'Santa_Cruz_Tenerife']
+    # locs = ['Praia', 'Calhau', 'Capo_Verde',
+    #         'Teide', 'Izana', 'La_Laguna', 'Santa_Cruz_Tenerife']
 
-#     for i in ['Teide', 'Izana', 'La_Laguna', 'Santa_Cruz_Tenerife']:
-#         print i
-#         plot_v3_site_sda(i, ymd='20150812', ymd2='20150813')
+    # for i in ['Teide', 'Izana', 'La_Laguna', 'Santa_Cruz_Tenerife']:
+    #     print i
+    #     plot_v3_site_sda(i, ymd='20150812', ymd2='20150813')
 
-#     plot_v3_site_sda('Capo_Verde', ymd='20150820', ymd2='20150821')
+    # plot_v3_site_sda('Capo_Verde', ymd='20150820', ymd2='20150821')
 
-#     web_data = downlaod_v3_site('Teide', ymd='20150812', ymd2='20150813',
-#                                 verb=True)
-#     pdata = parse_v3_web_data(web_data)
-#     # print web_data
-#     print pdata
+    # web_data = downlaod_v3_site('Teide', ymd='20150812', ymd2='20150813',
+    #                             verb=True)
+    # pdata = parse_v3_web_data(web_data)
+    # # print web_data
+    # print pdata
 
-#     for i in ['Praia', 'Capo_Verde']:
-#         print i
-#         plot_v3_site_sda(i, ymd='20150820', ymd2='20150821')
+    # for i in ['Praia', 'Capo_Verde']:
+    #     print i
+    #     plot_v3_site_sda(i, ymd='20150820', ymd2='20150821')

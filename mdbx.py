@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 Interrogate MetDB to extract or plot stored observations.
-Created on Wed Oct 11 14:38:17 2017
-@author: yaswant.pradhan
 
 """
 import os
@@ -10,11 +11,13 @@ import numpy as np
 from metdb import obs, subtypes
 from csv import writer
 from ypylib.utils import XYZ, ll_parse, log
+__version__ = "2017.10.1"
+__author__ = "Yaswant Pradhan"
 
 
 class Query(object):
-    """
-    MetDB query instance. Some default values are picked from static variables.
+    """MetDB query instance. Some default values are picked from static
+    variables.
 
     Attributes
     ----------
@@ -229,8 +232,7 @@ class Query(object):
             subtypes.DTYPE_MAPS[self.subtype][el] = dt
 
     def extract(self, verbose=False, fix_unknown=False):
-        """
-        Extract obs from MetDB.
+        """Extract obs from MetDB.
 
         Parameters
         ----------
@@ -283,8 +285,7 @@ class Query(object):
         return data
 
     def to_dump(self, filename):
-        """
-        Dump a pickle of the extracted array to the specified file.
+        """Dump a pickle of the extracted array to the specified file.
         The array can be read back with `pickle.load()` or `numpy.load()`.
 
         Parameters
@@ -304,8 +305,8 @@ class Query(object):
             log.info('File saved: %s', filename)
 
     def to_txt(self, filename, delimiter=',', fmt=None):
-        """
-        Save data to a text file.
+        """Save data to a text file.
+
         Preferred over to_csv() for speed and control.
 
         Parameters
@@ -344,8 +345,7 @@ class Query(object):
             log.info('File saved: %s', filename)
 
     def to_csv(self, filename):
-        """
-        Save data to comma separated value (csv) file.
+        """Save data to comma separated value (csv) file.
 
         Parameters
         ----------
@@ -360,8 +360,7 @@ class Query(object):
         TODO: Auto generate filename
         """
         def fields_view(arr, fields):
-            """
-            Create columns views of a structured array.
+            """Create columns views of a structured array.
 
             Parameters
             ----------
@@ -394,8 +393,7 @@ class Query(object):
 
     def plot(self, element, index=None, fix_unknown=False, show=False,
              valid_min=None, valid_max=None, **kw):
-        """
-        Plot requested data on a cylindrical map.
+        """Plot requested data on a cylindrical map.
 
         Parameters
         ----------
