@@ -1348,7 +1348,7 @@ def getnn(data1, data2, r, k=5, p=2.0, eps=0.0, n_proc=1):
 
 
 def get_public_methods(class_name):
-    """Returns public method names in a class.
+    """Return public method names in a class.
 
     Parameters
     ----------

@@ -10,7 +10,7 @@ import pwd
 import numpy as np
 from metdb import obs, subtypes
 from csv import writer
-from ypylib.utils import XYZ, ll_parse, log
+from ypylib.utils import XYZ, ll_parse, log, mkdirp
 __version__ = "2017.10.1"
 __author__ = "Yaswant Pradhan"
 
@@ -60,11 +60,13 @@ class Query(object):
         Contains Start/Stop Time, Area, DDICT, MERGED data specifications.
     limit : list of list
         [[West, East], [North, South]] geographic limit based on area keyword.
-    mdb_extract : TYPE
-        Description
+    mdb_extract : bool
+        Flag to indicate whether a mdb extract is required
     merged : bool, optional
         This is required to retrieve merged data.  Use only with subtypes
         offering this option.
+    platform : str, optional
+        Specify Platform ID when required (e.g. for buoy data)
     start, stop : str, optional
         Cut-off start and stop times (default TODAY-1/0000Z, TODAY-1/0600Z).
         The start and stop values accepts datetime in `%Y%m%d/%H%MZ` format.
@@ -176,11 +178,12 @@ class Query(object):
     def __init__(self, subtype, elements,
                  start=None, stop=None,
                  area=None, ddict=None,
-                 platform=None,
+                 platform=None, over=None,
                  merged=False, hostname=None,
                  keep=False, constrain=None):
 
         self.subtype = subtype
+        self.constrain = constrain
         self.start = [start, Query.start][start is None]
         self.stop = [stop, Query.stop][stop is None]
         self.keywords = ['START TIME ' + self.start, 'END TIME ' + self.stop]
@@ -191,6 +194,8 @@ class Query(object):
             self.keywords += ['AREA ' + ' '.join(area)]
         if ddict:
             self.keywords += ['DDICT ' + ddict]
+        if over:
+            self.keywords += ['OVER ' + over]
         if merged is True:
             self.keywords += ['DATA MERGED']
         if platform:
@@ -202,6 +207,9 @@ class Query(object):
         # for multi-dimensional array
         if isinstance(elements, tuple):
             elements = [elements]
+        # add constrained fields to elements list
+        if self.constrain:
+            elements += list(constrain.keys())
         elements += Query.elements
         s = set(elements)
         # re-order the elements to put datetime and lat lon first
@@ -209,7 +217,6 @@ class Query(object):
         self.hostname = hostname
         self.ddict = ddict
         self.keep = keep
-        self.constrain = constrain
         self.data = None
         self.mdb_extract = False if self.keep is True else True
 
@@ -274,10 +281,18 @@ class Query(object):
             raise(err)
 
         if self.constrain:
-            # print(list(self.constrain))
-            key = list(self.constrain.keys())[0]
-            value = list(self.constrain.values())[0]
-            data = data[data[key] == value]
+            # single field constrain
+            # key = list(self.constrain.keys())[0]
+            # value = list(self.constrain.values())[0]
+            # data = data[data[key] == value]
+
+            # iterate through all constained fields
+            for key, val in self.constrain.items():
+                data = data[data[key] == val]
+            if len(data) == 0:
+                log.error('Constrain results with no data.')
+                print(self.constrain)
+                return
 
         if self.keep:
             self.data = data
@@ -301,6 +316,7 @@ class Query(object):
             data = self.data
 
         if data is not None:
+            mkdirp(os.path.dirname(filename))
             data.dump(filename)
             log.info('File saved: %s', filename)
 
@@ -337,6 +353,7 @@ class Query(object):
             data = self.data
 
         if data is not None:
+            mkdirp(os.path.dirname(filename))
             np.savetxt(filename, data,
                        delimiter=delimiter,
                        header=el_header,
@@ -493,7 +510,7 @@ class Query(object):
 def plot_sataod(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
                 constrain=None, **kw):
     """Plot MODIS AOD."""
-    q = Query('SATAOD', [ELEMENT, 'STLT_IDNY'], area=AREA,
+    q = Query('SATAOD', ELEMENT, area=AREA,
               start=START, stop=STOP,
               constrain=constrain, keep=True)
     return q.plot(ELEMENT, **kw)
@@ -715,15 +732,16 @@ if __name__ == '__main__':
 
     # data from operational server
     # import cartopy.crs as ccrs
-    plot_sataod(constrain={'STLT_IDNY': 783},
-                AREA=['40N', '10N', '30E', '60E'],
+    plot_sataod(constrain={'STLT_IDNY': 783, 'SRFC_TYPE': 2},
+                # AREA=['40N', '10N', '30E', '60E'],
+                AREA=['40N', '1N', '30E', '100E'],
                 START='20190314/0600Z',
                 STOP='20190314/0900Z',
                 delta=(0.2, 0.2),
                 # plt_type='hexbin',
                 # projection=ccrs.Robinson(),
                 vmin=0, vmax=2,
-                cb_on=True, use_cartopy=True).show()
+                cb_on=True, use_cartopy=True)
 
     # plot_sataod(use_cartopy=True, cb_on=True, map_res='h').show()
 

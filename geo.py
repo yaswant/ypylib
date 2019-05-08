@@ -33,11 +33,10 @@ RPOL = 6356583.8               # Earth semi-minor axis (m)
 
 
 class GeoProjection(object):
-    """A geostationary projection definition for SPS processing.
-    """
+    """A geostationary projection definition for SPS processing."""
     def __init__(self, satellite, channel_resolution=None,
                  apply_SEVIRI_grid_correction=False):
-        """Defines the parameters specific to a satellite.
+        """Define satellite-specifics.
 
         Args:
             satellite (str): Satellite ID. Defaults to 'MSG'.
@@ -596,65 +595,69 @@ def get_dust_rgb(h5handle, stride=(1, 1), satellite='MSG', **kw):
     return rgbImg
 
 
-def plotx(filename, add_cbar=False,
-          dataset_path=None, dust_rgb=False, dust_quality=None,
-          satellite='MSG', projection=None, extent=None,
-          stride=(1, 1), quick=False, MDI=None, draw_countries=False,
-          coastline=True, cres='110m', ccolor='w',
-          cb_width=0.02, cb_unit='', cb_nticks=None, cb_bounds=None,
-          list_all=False, show_path=False, show_ticks=False,
-          xglocs=None, yglocs=None, gl_font=None, glw=0.5,
-          tag_fig=None, tag_col='k', title=None, figsize=(6, 6),
-          save_fig=None, ax=None, **kw):
+def plotx(filename,
+          ax=None, cb_on=False, cb_bounds=None, cb_nticks=None, cb_unit='',
+          cb_width=0.02, ccolor='w', coastline=True, cres='110m',
+          dataset_path=None, draw_countries=False, dust_rgb=False,
+          dust_quality=None, extent=None, figsize=(6, 6), gl_font=None,
+          glw=0.5, list_all=False, MDI=None, projection=None, quick=False,
+          satellite='MSG', save_fig=None, show_path=False, show_ticks=False,
+          stride=(1, 1), tag_fig=None, tag_col='k', title=None, xglocs=None,
+          yglocs=None, **kw):
     """Display 2D arrays from geostationary Slotstore file.
 
     Args:
-        filename (str): Slotstore (hdf5) filename.
-        add_cbar (bool, optional): add colour bar to the plot.
-        dataset_path (None, optional): Full path to 2D array data in hdf5.
+        filename (str): Slotstore filename. An hdf5 file containing full-disc
+            arrays of geostationary satellite or equivalent model data.
+        ax (cartopy.mpl.geoaxes.GeoAxesSubplot, optional): Plot data on a
+            specific geo axis.
+        cb_on (bool, optional): Add colour bar to the plot.
+        cb_bounds (array_like, optional): Specify discrete bounds for colorbar.
+        cb_nticks (int, optional): Number of ticks to show in the colorbar.
+        cb_unit (str, optional): Show data unit string on colorbar.
+        cb_width (float, optional): Colour bar width.
+        ccolor (str, optional): Coastline/boundary colour. Defaults to white.
+        coastline (bool, optional): Show/hide coastlines. Defaults to True.
+            Setting this to False will show the plot as a plain 2D array.
+        cres (str, optional): Resolution of cartopy coastline/country boundary.
+            Defaults to '110m'.  Accepted values are '10m', '50m', '110m'.
+        dataset_path (str, optional): Full path to 2D array data in hdf5.
+        draw_countries (bool, optional): Show country boundaries.
         dust_rgb (bool, optional): Plot Dust RGB, require BT at 3 SEVIRI IR
             window channels in the file. Note: dataset_path and dust_rgb
             keywords are mutually exclusive.
         dust_quality (int, optional): Mask plot based on dust confidence flag
             (value range: 1-7).
-        satellite (str, optional): Satellite ID ('MSG')|'GOES16'|'GOES-E'|
-            'GOES17'|'GOES-W'|'IODC'|'MSG_IODC'|'HIM8'
-        projection (cartopy crs, optional): Cartopy projection to use for
-            mapping - one from the following
-            Geostationary(), PlateCarree(), Mercator().
         extent (sequence, optional): Longitude and Latitude bounds to plot the
             data (lon0, lon1, lat0, lat1)
-        stride (tuple, optional): Skip pixels in x,y dimension, Default (1, 1)
-            is to show at full res.
-        quick (bool, optional): quick plot. Equivalent to stride=(10, 10).
-        MDI (number, optional): Missing Data Indicator.
-        draw_countries (bool, optional): Show country boundaries.
-        coastline (bool, optional): Show coastlines. Setting this to False
-            will plot the 2D array as is (without geo-location information).
-        cres (str, optional): Coastline/country boundary resolution.
-        ccolor (str, optional): Coastline/boundary colour.
-        cb_width (float, optional): Colour bar width.
-        cb_unit (str, optional): Data unit to show on top of the colour bar.
-        cb_nticks (int, optional): Number of ticks to show in the colour bar.
-        cb_bounds (None, optional): Discrete bounds for colour bar.
-        list_all (bool, optional): Show list of all available dataset in the
-            file (no plot) and exit.
-        show_path (bool, optional): Show filename and dataset path on plot.
-        show_ticks (bool, optional): plot ticks and tick labels for non-mapped
-            display.
-        xglocs (array_like, optional): Locations of x grid-lines.
-        yglocs (array_like, optional): Locations of y grid-lines.
+        figsize (tuple, optional): Figure size. Default is (6, 6)
         gl_font (dict, optional):  Font properties for grid labels default is
             {'family': 'monospace', 'size': 8, 'color': '#333333'}
         glw (float, optional): Width of grid lines.
-        tag_fig (None, optional): Add optional string to top left corner of
-            figure.
+        list_all (bool, optional): Show list of all available dataset in the
+            file (no plot) and exit.
+        MDI (number, optional): Missing Data Indicator.
+        projection (cartopy crs, optional): Cartopy projection to use for
+            mapping - one from the following
+            Geostationary(), PlateCarree(), Mercator().
+        quick (bool, optional): Quick plot. Equivalent to stride=(10, 10).
+        satellite (str, optional): Satellite ID. Defaults to 'MSG'. Accepted
+            satellite IDs are: 'GOES16', 'GOES-E', 'GOES17', 'GOES-W',
+            'IODC'|'MSG_IODC', 'HIM8'.
+        save_fig (str, optional): Save plot to a named file.
+        show_path (bool, optional): Show filename and dataset path on plot.
+        show_ticks (bool, optional): plot ticks and tick labels for non-mapped
+            display.
+        stride (tuple, optional): Skip pixels in x,y dimension, Default (1, 1)
+            is to show at full resolution.
+        tag_fig (str, optional): Add optional string to top left corner of
+            figure. Useful for figures for articles.
         tag_col (str, optional): Colour of tag_fig text.
-        title (str, optional): Figure title.
-        figsize (tuple, optional): Figure size. Default is (6, 6)
-        save_fig (None, optional): Save plot to a file.
-        ax (cartopy GeoAxis, optional): Specify axis to plot.
-        **kw: accepted `imshow` keywords.
+        title (str, optional): Figure title. Defaults to variable name from
+            dataset_path (or 'DustRGB').
+        xglocs (array_like, optional): Locations of x grid-lines.
+        yglocs (array_like, optional): Locations of y grid-lines.
+        **kw: accepted `imshow` keywords (see imshow).
 
     Returns:
         matplotlib.pyplot or None: plot object or None if figure saved to disc.
@@ -662,7 +665,7 @@ def plotx(filename, add_cbar=False,
     Raises:
         NotImplementedError: If Projection is not one of the following
             Geostationary, PlateCarree, Mercator
-        ValueError: If dataset_path is missing or incorrect or ambiguous
+        ValueError: If dataset_path is missing or incorrect or ambiguous.
 
     """
     import matplotlib.pyplot as plt
@@ -718,7 +721,7 @@ def plotx(filename, add_cbar=False,
     # Get dust RGB array
     if dust_rgb and dataset_path is None:
         dataset_path = 'DustRGB'
-        add_cbar = False
+        cb_on = False
         plot_array = get_dust_rgb(h5, stride=stride, satellite=satellite)
 
     elif dataset_path and dust_rgb is False:
@@ -789,7 +792,8 @@ def plotx(filename, add_cbar=False,
         'norm': None,
         'interpolation': None}
     plot_array_kw.update(**kw)
-
+    gridline_kw = dict(alpha=0.5, xlocs=xglocs, ylocs=yglocs, linestyle='-',
+                       linewidth=glw)
     if coastline:
         if projection in (ccrs.PlateCarree(),
                           ccrs.PlateCarree(central_longitude=0),
@@ -803,9 +807,7 @@ def plotx(filename, add_cbar=False,
                 ax = plt.axes(projection=projection)
             extent = [extent, def_extent][extent is None]
             ax.set_extent(extent, ccrs.PlateCarree())
-            gl = ax.gridlines(
-                draw_labels=True, alpha=0.5, xlocs=xglocs, ylocs=yglocs,
-                linestyle='-', linewidth=glw)
+            gl = ax.gridlines(draw_labels=True, **gridline_kw)
             gl.xlabels_top = False
             gl.ylabels_right = False
             gl.xformatter = cgrid.LONGITUDE_FORMATTER
@@ -819,6 +821,7 @@ def plotx(filename, add_cbar=False,
             if ax is None:
                 ax = plt.axes(projection=ccrs.Geostationary(c_lon))
             ax.set_global()
+            gl = ax.gridlines(**gridline_kw)
             im = ax.imshow(plot_array, **plot_array_kw)
 
             if extent:
@@ -833,7 +836,9 @@ def plotx(filename, add_cbar=False,
         ax.coastlines(resolution=cres, lw=0.5, color=ccolor)
     else:
         if extent:
-            log.warn('Ignored extent. For subsets please set coastline=True')
+            # TODO: implement geo-to-pixel for cut outs without map
+            log.warning('Ignored extent. For geographic subsets please set '
+                        'coastline=True.')
         ax_pos = [0.05, 0.1, 0.8, 0.8]
         if show_ticks:
             ax_pos = [0.1, 0.1, 0.8, 0.8]
@@ -871,7 +876,7 @@ def plotx(filename, add_cbar=False,
         ax.grid(lw=0.5, alpha=0.5)
 
     # Attach vertical colour bar
-    if add_cbar:
+    if cb_on:
         cax = plt.axes([pos.x1, pos.y0, cb_width, pos.height])
         cb = plt.colorbar(mappable=im, cax=cax, format='%g')
         cb.ax.tick_params(direction='in')
@@ -963,10 +968,11 @@ class MSG(object):
         self.filename = None
 
     def geo2pix(self, lon, lat):
-        """Return the pixel column and row number of an MSG image for a given
-        pair of longitude, latitude values.
+        """Return pixel (column, row) number for given (lon, lat).
 
-        Note: calculation based on the formulae given in Ref [1]
+        Calculate column and row index on a SEVIRI full disc for specific
+        geographic coordinate(s). Calculation based on the formulae given in
+        Ref [1].
 
         Args:
             lon (array_like): Longitude value(s)
@@ -976,9 +982,9 @@ class MSG(object):
             tuple: Tuple of (col, row) where col and row are masked arrays
 
         Examples:
-        >>> x, y = MSG().geo2pix(0, 0)
-        >>> print(x, y)
-        1856 1856
+            >>> x, y = MSG().geo2pix(0, 0)
+            >>> print(x, y)
+            1856 1856
         """
         lonR = np.radians(lon)
         latR = np.radians(lat)
@@ -1153,23 +1159,32 @@ def wrap_lon(longitude, hemisphere=False):
 
 
 if __name__ == "__main__":
+    # Run doctest -----------------------------
     # import doctest
     # doctest.testmod()
     # pass
+    # -----------------------------------------
+
+    # import matplotlib
+    # matplotlib.use('Qt5Agg')
 
     filename0 = os.path.expandvars(
         '$SCRATCH/MSG/LiteSlotstore/ICE-D/20150812/'
         'MSG_201508121200_DustAOD.h5')
     plt_kw = dict(
-        dust_rgb=True,
+        dataset_path='MSG/IR_108/BT',  # dust_rgb=True,
+        # quick=True,
+        # cres='50m',
         # extent=(-60.5, 55, 0, 70.5),
         # stride=(8, 8),
+        cb_on=True,
         extent=(-20, 20, 10, 40),
-        draw_countries=True,
+        # coastline=False,
+        # draw_countries=True,
         ccolor='k',
         # projection=ccrs.PlateCarree(),
-        xglocs=list(range(-60, 55, 20)),
-        yglocs=list(range(10, 71, 20)),
+        # xglocs=list(range(-60, 55, 5)),
+        # yglocs=list(range(10, 71, 5)),
         # save_fig=os.path.expandvars('$SCRATCH/dustrgb.png'),
     )
     plotx(filename0, **plt_kw).show()
