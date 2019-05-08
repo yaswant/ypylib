@@ -11,7 +11,7 @@ import numpy as np
 from metdb import obs, subtypes
 from csv import writer
 from ypylib.utils import XYZ, ll_parse, log, mkdirp
-__version__ = "2017.10.1"
+__version__ = "2019.05.1"
 __author__ = "Yaswant Pradhan"
 
 
