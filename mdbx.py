@@ -732,7 +732,8 @@ if __name__ == '__main__':
 
     # data from operational server
     # import cartopy.crs as ccrs
-    plot_sataod(constrain={'STLT_IDNY': 783, 'SRFC_TYPE': 2},
+    plot_sataod(constrain={'SRFC_TYPE': 3},
+                # constrain={'STLT_IDNY': 783, 'SRFC_TYPE': 3},
                 # AREA=['40N', '10N', '30E', '60E'],
                 AREA=['40N', '1N', '30E', '100E'],
                 START='20190314/0600Z',
@@ -741,7 +742,7 @@ if __name__ == '__main__':
                 # plt_type='hexbin',
                 # projection=ccrs.Robinson(),
                 vmin=0, vmax=2,
-                cb_on=True, use_cartopy=True)
+                cb_on=True, use_cartopy=True, show=True)
 
     # plot_sataod(use_cartopy=True, cb_on=True, map_res='h').show()
 

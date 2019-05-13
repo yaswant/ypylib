@@ -53,7 +53,14 @@ __author__ = "Yaswant Pradhan"
 class Convert(object):
     """
     Simple unit converter
+
+    Attributes
+    ----------
+    value : number
+        Input value to convert.
+
     """
+
     def __init__(self, value):
         self.value = np.array(value)
 
@@ -142,6 +149,7 @@ class List(list):
         Or,
         >>> a_list = List([np.array(10)], name='ListName')
     """
+
     def __new__(self, *args, **kwargs):
         return super(List, self).__new__(self, args, kwargs)
 
@@ -159,6 +167,7 @@ class List(list):
 
 class XYZ(object):
     """Discrete triplet data (x, y, z) analyser."""
+
     def __init__(self, x, y, z):
         """XYZ Constructor.
 
@@ -547,8 +556,8 @@ class XYZ(object):
         globe = kw.get('globe', False)
 
         limit = np.array(
-            kw.get('limit', np.array([[self.x.min(), self.x.max()],
-                                     [self.y.min(), self.y.max()]])))
+            kw.get('limit', np.array(
+                [[self.x.min(), self.x.max()], [self.y.min(), self.y.max()]])))
         mbuf = kw.get('map_buffer', None)
         if mbuf:
             limit += np.array([[-mbuf, mbuf], [-mbuf, mbuf]])
@@ -1722,6 +1731,38 @@ def reverse_cmap(cmap, N=256):
     return rev_cm
 
 
+def save_notebook_figures(url):
+    """
+    Extraction image files from a Jupyter notebook and save them to disk.
+
+    See https://nbconvert.readthedocs.io/en/latest/nbconvert_library.html
+
+    Parameters
+    ----------
+    url : str
+        Notebook URL. Example
+        'https://path/to/jupyter.notebook'
+        'file:///path/to/jupyter.notebook'
+    """
+
+    from urllib.request import urlopen
+    import nbformat
+    from nbconvert import RSTExporter
+
+    response = urlopen(url).read().decode()
+    notebook = nbformat.reads(response, as_version=4)
+
+    # Extract the base64 encoded figures as files
+    rst_exporter = RSTExporter()
+    (body, resources) = rst_exporter.from_notebook_node(notebook)
+
+    # write image hex-dump to indivisual file
+    for imgfile in sorted(resources['outputs'].keys()):
+        with open(imgfile, "wb") as f:
+            print("writing {}...".format(imgfile))
+            f.write(resources['outputs'][imgfile])
+
+
 def strmatch(patterns, filename, mutually_inclusive=False):
     """Saerch lines with smatching strings in a text file.
 
@@ -1937,6 +1978,7 @@ def yjd2dt(yjd, fmt='%Y%j'):
 
 class Integer(object):
     """The usual single-bit operations will work on any Python integer."""
+
     def __init__(self, int_type):
         super(Integer, self).__init__()
         self.int_type = int_type
