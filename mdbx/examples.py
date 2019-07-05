@@ -1,5 +1,5 @@
 """Demonstration of direct plotting of from MetDB using mdbx"""
-from ypylib import mdbx
+import mdbx
 
 
 def plot_sataod(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
