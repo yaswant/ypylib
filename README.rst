@@ -2,4 +2,12 @@
 ypylib
 ======
 
-Yaswant's python utils.
+Yaswant's Python Library
+
+- aeronetx
+- geo
+- mdbx
+- sdf
+- stats
+- utils
+
