@@ -8,7 +8,7 @@ from __future__ import print_function
 from builtins import object
 from past.builtins import basestring
 from future.utils import iteritems
-from collections import OrderedDict
+import collections
 import os
 import numpy as np
 import h5py
@@ -434,8 +434,8 @@ class h5Parse(object):
             (Ordered) Dictionary of requested or all variables from the file.
 
         """
-        from collections import OrderedDict
-        odict = OrderedDict() if order else {}
+
+        odict = collections.OrderedDict() if order else {}
         if dsname is None:
             dsname = self.get_dslist()
         elif isinstance(dsname, basestring):
@@ -503,7 +503,7 @@ def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
 
     """
     from netCDF4 import Dataset
-    out = OrderedDict() if order else {}
+    out = collections.OrderedDict() if order else {}
     with Dataset(filename, 'r') as nc:
 
         # Dimensions
