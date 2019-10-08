@@ -34,6 +34,7 @@ RPOL = 6356583.8               # Earth semi-minor axis (m)
 
 class GeoProjection(object):
     """A geostationary projection definition for SPS processing."""
+
     def __init__(self, satellite, channel_resolution=None,
                  apply_SEVIRI_grid_correction=False):
         """Define satellite-specifics.

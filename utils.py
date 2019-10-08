@@ -17,9 +17,10 @@ import logging as log
 import numpy as np
 import matplotlib as mpl
 import matplotlib.cm as mpl_cm
+import collections
 from sys import platform
 from netCDF4 import Dataset
-from collections import Sequence, OrderedDict
+# from collections import Sequence, OrderedDict
 from datetime import date, datetime, timedelta
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import cKDTree
@@ -342,7 +343,7 @@ class XYZ(object):
 
         if globe is True:
             limit = self.limit
-        if isinstance(delta, Sequence) is False:
+        if isinstance(delta, collections.Sequence) is False:
             delta = [delta, delta]
         if len(delta) == 1:
             delta = [delta, delta]
@@ -1414,7 +1415,7 @@ def load_nc(filename, variables=None, verb=False, gattr=False, order=False):
         (Ordered) Dictionary of requested or all variables from the file.
 
     """
-    out = OrderedDict() if order else {}
+    out = collections.OrderedDict() if order else {}
 
     basestring = str  # python 2/3 compatible
 
@@ -1494,9 +1495,9 @@ def merge_dicts(dict_seq):
     collections.defaultdict
         Merged dictionary will all key values. All values are lists.
     """
-    from collections import defaultdict
+    # from collections import defaultdict
 
-    out = defaultdict(list)
+    out = collections.defaultdict(list)
     for i in range(len(dict_seq)):
         if dict_seq[i].__class__ is not dict:
             raise TypeError('dict_seq {} is not a dict'.format(i + 1))

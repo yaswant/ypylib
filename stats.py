@@ -2,7 +2,6 @@
 :author: yaswant.pradhan
 :copyright: Crown copyright. Met Office.
 """
-
 import numpy as np
 from scipy import stats
 from math import log
@@ -278,6 +277,73 @@ def stat2(x, y):
                   np.sum((np.abs(y - xd[2]) + np.abs(x - xd[2]))**2)),
         'count': xd[0]
     }
+
+
+def compare(x, y):
+    import collections
+
+    x = np.array(x).flatten()
+    y = np.array(y).flatten()
+
+    result = collections.namedtuple(
+        'Stat2',
+        ['bias', 'bias_median', 'bias_norm_mean', 'bias_norm_mean_factor',
+         'bias_relative', 'count', 'fractional_gross_error', 'intercept',
+         'normalised_mean_error', 'normalised_mean_error_factor',
+         'murphy_skill_score', 'p_linear', 'p_rank', 'r_linear', 'r_rank',
+         'rmse', 'rmse_relative', 'rmse_unbiased', 'slope', 'standard_error',
+         'willmott_index',
+         'xmin', 'xmedian', 'xmean', 'xmax', 'xvar', 'xskew', 'xkurt',
+         'ymin', 'ymedian', 'ymean', 'ymax', 'yvar', 'yskew', 'ykurt'])
+
+    # remove invalid points from both series
+    valid = np.where(np.isfinite(x) & np.isfinite(y))
+    x, y = x[valid], y[valid]
+    xd = stats.describe(x, axis=None)
+    yd = stats.describe(y, axis=None)
+    rs_p = stats.spearmanr(x, y)
+    fit = stats.linregress(x, y)
+    rmse = np.sqrt(np.mean((y - x)**2))
+    bias = np.mean(y - x)
+    med_bias = np.median(y - x)
+
+    result.bias = bias
+    result.bias_median = med_bias
+    result.bias_norm_mean = np.sum(y - x) / np.sum(x)
+    result.bias_norm_mean_factor = bias / [yd[2], xd[2]][bias >= 0]
+    result.bias_relative = bias / xd[2]
+    result.count = xd[0]
+    result.fractional_gross_error = 2.0 * np.mean(np.abs((y - x) / (y + x)))
+    result.intercept = fit[1]
+    result.normalised_mean_error = np.abs(np.sum(y - x)) / np.sum(x)
+    result.normalised_mean_error_factor = np.sum(np.abs(y - x)) / [np.sum(y), np.sum(x)][bias >= 0]  # noqa
+    result.murphy_skill_score = 1 - (rmse**2 / xd[3])
+    result.p_linear = fit[3]
+    result.p_rank = rs_p[0]
+    result.r_linear = fit[2]
+    result.r_rank = rs_p[1]
+    result.rmse = rmse
+    result.rmse_relative = rmse / xd[2]
+    result.rmse_unbiased = np.sqrt(rmse**2 - bias**2)
+    result.slope = fit[0]
+    result.standard_error = fit[4]
+    result.willmott_index = 1 - (np.sum(y - x) / np.sum((np.abs(y - xd[2]) + np.abs(x - xd[2]))**2))  # noqa
+    result.xmin = xd[1][0]
+    result.xmedian = np.median(x)
+    result.xmean = xd[2]
+    result.xmax = xd[1][1]
+    result.xvar = xd[3]
+    result.xskew = xd[4]
+    result.xkurt = xd[5]
+    result.ymin = yd[1][0]
+    result.ymedian = np.median(y)
+    result.ymean = yd[2]
+    result.ymax = yd[1][1]
+    result.yvar = yd[3]
+    result.yskew = yd[4]
+    result.ykurt = yd[5]
+
+    return result
 
 
 def bin_xyz(x, y, z, delta=(1., 1.), limit=None, globe=False, order=False):
