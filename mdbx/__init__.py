@@ -423,7 +423,7 @@ class Query(object):
             and d is number of wavelengths then index=1 will plot the field
             corresponding to the second wavelength, and so on...
         show : bool, optional
-            Ture displays the plot (default is False which return a pyplot
+            True displays the plot (default is False which return a pyplot
             object)
         valid_min : real
             Valid minimum physical value in the array. Setting this will mask

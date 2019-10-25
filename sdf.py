@@ -167,9 +167,6 @@ class h4Parse(object):
         """
         temp = self.get_sds(fieldnames)
         print(fieldnames)
-        # print temp[fieldnames].keys()
-        # print dir(temp)
-        # print temp.keys()
         scaled = dict.fromkeys(list(temp), None)
         fillvalue = {}
         for k in scaled:
@@ -198,6 +195,7 @@ class h5Parse(object):
         - netCDF4 files:
             reading attributes - partially/not functional yet.
     """
+
     def __init__(self, filename=None, **kw):
         """Initialise the HDF5 parser object.
 

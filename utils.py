@@ -20,7 +20,6 @@ import matplotlib.cm as mpl_cm
 import collections
 from sys import platform
 from netCDF4 import Dataset
-# from collections import Sequence, OrderedDict
 from datetime import date, datetime, timedelta
 from scipy.ndimage import gaussian_filter
 from scipy.spatial import cKDTree
