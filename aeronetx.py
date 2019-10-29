@@ -1,10 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 """
 AERONET data extractor
 
 """
+from __future__ import print_function
 import os
 import linecache
 import tempfile
@@ -80,7 +81,7 @@ def parse_v3_site(site, url=None):
     if site in list(df.Site_Name):
         return True, df
     else:
-        print "'{}' not found in AERONET Database Site List".format(site)
+        print("'{}' not found in AERONET Database Site List".format(site))
         return False, df
 
 
@@ -261,7 +262,7 @@ def downlaod_v3_region(llyx, uryx, ymd=None, hr1=0, ymd2=None, hr2=23,
             y1, m1, d1, hr1, y2, m2, d2, hr2, prd, avg, no_html)
 
     if verb:
-        print cmd
+        print(cmd)
 
     # download records and return out string with all html tags stripped
     recs = os.popen(cmd).read()
@@ -300,7 +301,7 @@ def read_data(filename, version=2):
     for line in file_info:
         if 'Version' in line:
             prodname = str.strip(line)
-            print prodname
+            print(prodname)
 
     if version == 2:
         skipr = 4
@@ -356,7 +357,7 @@ def parse_v3_web_data(web_data, skip_rows=6):
     """
     skipr = skip_rows
     if len(web_data) < 100:
-        print '** No records in the web_data'
+        print('** No records in the web_data')
         return
 
     hdr = pd.read_csv(StringIO(web_data), skiprows=skipr,
@@ -407,7 +408,7 @@ def plot_v3_site_sda(site, ymd=None, ymd2=None, hr1=0, hr2=23,
     data = downlaod_v3_site(site, ymd=ymd, ymd2=ymd2, hr1=hr1, hr2=hr2,
                             prd=prd, avg=avg, verb=verb)
     if len(data) < 100:
-        print '** No data found for {} on {} **'.format(site, ymd)
+        print('** No data found for {} on {} **'.format(site, ymd))
         return
 
     hdr = pd.read_csv(StringIO(data), skiprows=skip_rows,
@@ -443,7 +444,7 @@ def plot_v3_site_sda(site, ymd=None, ymd2=None, hr1=0, hr2=23,
         pdf = sda[plot_columns]
         del df, sda
     else:
-        print "** No SDA data for " + site + ' **'
+        print("** No SDA data for " + site + ' **')
         return
 
     # Hourly average?
