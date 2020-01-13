@@ -588,15 +588,16 @@ if __name__ == "__main__":
     # x = downlaod_v3_region([17.7,72.5],[27.0,90.8])
     # print x
 
-    # Site-specific plotting examples:
-    # Example 1: Plot yesterdays observation over Kanpur
+    # - Site-specific time-series plotting examples:
+    # -- Example 1: Plot yesterdays observation over Kanpur
     # plot_v3_site_sda('Kanpur')
-    # plot_v3_site_sda('Kanpur', ymd='20170303', hr1=5)  # , hourly=True)
-
+    # -- Plot from ymd to latest available date
+    # plot_v3_site_sda('Kanpur', ymd='20170303', hr1=5)
+    # plot_v3_site_sda('Kanpur', ymd='20190901', hourly=True)
     # plot_v3_site_sda('Kanpur', ymd='20170213', ymd2='20170216')
-    # plot_v3_site_sda('Bhola', ymd='20170227')
+    # plot_v3_site_sda('Bhola', ymd='20200101')
 
-    # Example 2: Plot from a start date to yesterday with hourly averages:
+    # - Example 2: Plot from a start date to yesterday with hourly averages:
     # plot_v3_site_sda('Kuwait_University', ymd='20170114', hourly=True)
 
     # plot_v3_site_sda('Capo_Verde', ymd='20150812', ymd2='20150822')

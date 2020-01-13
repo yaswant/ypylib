@@ -128,6 +128,70 @@ class Convert(object):
         self.value = 0
 
 
+class Integer(object):
+    """The usual single-bit operations will work on any Python integer."""
+
+    def __init__(self, int_type):
+        super(Integer, self).__init__()
+        self.int_type = int_type
+
+    def test_bit(self, offset, mask_type=None):
+        """test_bit() returns a non-zero result, 2**offset, if the bit at
+        'offset' is one.
+
+        Parameters
+        ----------
+        offset : int
+            Bit position to test.  It is up to the user to make sure that the
+            value of offset makes sense in the context of the program
+        mask_type : str, optional
+            Returns a boolean (True|False) mask, if set to 'bool' or
+            a binary (1|0) mask if set to 'bin' or 'int', instead of 2**offset.
+
+        Returns
+        -------
+        int_type or boolean
+            Description
+
+        Examples
+        --------
+        test 3rd bit for 10
+
+        >>> print(Integer(10).test_bit(3))
+        8
+
+        >>> print(Integer(10).test_bit(3, mask_type='bool'))
+        True
+
+        >>> print(Integer(10).test_bit(3, mask_type='int'))
+        1
+        """
+        mask = 1 << offset
+        if mask_type is 'bool':
+            return(self.int_type & mask != 0)
+        elif mask_type in ('int', 'bin'):
+            return(self.int_type & mask != 0) * 1
+        else:
+            return(self.int_type & mask)
+
+    def set_bit(self, offset):
+        """set_bit() returns an integer with the bit at 'offset' set to 1."""
+        mask = 1 << offset
+        return(self.int_type | mask)
+
+    def clear_bit(self, offset):
+        """clear_bit() returns an integer with the bit at 'offset' cleared."""
+        mask = ~(1 << offset)
+        return(self.int_type & mask)
+
+    def toggle_bit(self, offset):
+        """toggle_bit() returns an integer with the bit at 'offset' inverted,
+        0 -> 1 and 1 -> 0.
+        """
+        mask = 1 << offset
+        return(self.int_type ^ mask)
+
+
 class List(list):
     """Create a custom List object to which user attributes can be added.
 
@@ -194,6 +258,10 @@ class XYZ(object):
         self.ylab = [1, 0, 0, 0]
         self.cbpad = '10%'
         self.G, self.xc, self.yc = None, None, None
+
+        # update xlimit based on actual data
+        if self.x.max() > 180:
+            self.limit[0] = [0, 360]
 
     def __enter__(self):
         return self
@@ -292,9 +360,6 @@ class XYZ(object):
 
         Parameters
         ----------
-        method : str, optional
-            The statistic to compute (default is 'mean'). Available statistics
-            are: 'mean', 'median', 'count', 'sum', 'min', 'max'
         delta : sequence or [float, float], optional
             Output grid resolution in x and y direction (default (1, 1)).
             The delta specification:
@@ -302,13 +367,18 @@ class XYZ(object):
                 (dx=dx=delta)
              *  If [float, float], the grid resolution for the two dimensions
                 (dx, dy = delta)
-        limit : [[float, float], [float, float]], optional
-            Output domain limit [[x0,x1], [y0,y1]] (default calculated from
-            actual x and y range)
         globe : bool, optional
             If True, sets the grid x and y limit to [-180,180] and [-90,90],
             respectively. If False, grid x and y limits are taken from input.
             (default False)
+        limit : [[float, float], [float, float]], optional
+            Output domain limit [[x0,x1], [y0,y1]] (default calculated from
+            actual x and y range)
+        method : str, optional
+            The statistic to compute (default is 'mean'). Available statistics
+            are: 'mean', 'std', median', 'count', 'sum', 'min', 'max'
+        norm : bool, optional
+            Normalize (devide by max value of) gridded output values.
         order : bool, optional
             If True, returns a upside-down flip and rotated array (default
             False)
@@ -327,10 +397,16 @@ class XYZ(object):
         bindata (deprecated)
             equivalent to method='mean'
         """
+        try:
+            from collections.abc import Sequence
+        except ImportError:
+            from collections import Sequence
+
         delta = kw.get('delta', self.delta)
         globe = kw.get('globe', False)
         order = kw.get('order', False)
         limit = kw.get('limit', self._get_extent())
+        norm = kw.get('norm', False)
         # limit = np.asarray(limit)
 
         # parse method parameters
@@ -339,10 +415,12 @@ class XYZ(object):
             method = 'sum'
         if method in ('avg', 'average', 'mean'):
             method = 'mean'
+        if method in ('count', 'freq', 'frequency'):
+            method = 'count'
 
         if globe is True:
             limit = self.limit
-        if isinstance(delta, collections.Sequence) is False:
+        if isinstance(delta, Sequence) is False:
             delta = [delta, delta]
         if len(delta) == 1:
             delta = [delta, delta]
@@ -356,21 +434,27 @@ class XYZ(object):
         # bin edges to bin centres
         xc = (stat4[1][1:] + stat4[1][:-1]) / 2
         yc = (stat4[2][1:] + stat4[2][:-1]) / 2
-        # return masked (masks for NaNs) array
-        if method == 'sum':
+
+        # mask sum and count arrays when no data available in the bin
+        if method in ('count', 'sum'):
             count4 = binned_statistic_2d(
                 self.x, self.y, self.z, statistic='count', bins=[xs, ys])
             G = np.ma.masked_where(count4[0] == 0, stat4[0])
         else:
             G = np.ma.masked_invalid(stat4[0])
-        #
+
+        # normalise gridded data if requested
+        if norm:
+            G /= G.max()
+
         self.G, self.xc, self.yc = G, xc, yc
-        if order is True:
-            # return np.flipud(np.rot90(G)), xc, yc
+
+        # transpose grid if requested
+        if order:
             self.G = G.transpose()
             return self.G, self.xc, self.yc
-            # return G.transpose(), xc, yc
-        return self.G, self.xc, self.yc
+        else:
+            return self.G, self.xc, self.yc
 
     def plot(self, **kw):
         """Line plot (x, y, z) as series."""
@@ -412,8 +496,20 @@ class XYZ(object):
 
         Parameters
         ----------
-        use_cartopy : bool, optional
-            Force maps to use cartopy in place of default basemap.
+        Contour proerties:
+        c_ecolor : mpl.color, optional
+            Set contour line colours (default '0.5')
+        c_levels : int or array_like, optional
+            Determines the number and positions of the contour lines / regions.
+            An integer value indicates number of levels (mpl decides the
+            boundaries) where are an array specifies the boundaries
+            (default 15)
+        c_lines : bool, optional
+            Also draw contour lines on top (default: False)
+        c_smooth : bool, optional
+            Smooth contour plot if plt_type is set to 'contour' (default False)
+
+        Colorbar properties:
         cb_extend : str, optional
             extend colorbar pointed ends (default: 'neither').
             Accepted values are 'neither'|'both'|'min'|'max'.
@@ -434,6 +530,7 @@ class XYZ(object):
             colorbar title (x, y) position in normal coordinate
             (default (0.5, 0.75) for `cbt_ha='centre'`
             (1, 0.75) for `cbt_ha='right'`).
+
         clip : bool, optional
             clip map extent within valid geographic ranges (default False).
         cmap : str, optional
@@ -449,6 +546,8 @@ class XYZ(object):
             output figure size (default auto adjusted with a base height of 5).
         figheight : number, optional
             control output figure base height (default 5)
+
+        Grid(line) properties:
         gcol : str, optional
             colors for parallel and meridian lines (default 'gray').
         gline : (number, number), optional
@@ -467,6 +566,7 @@ class XYZ(object):
             False). This keyword overrides limit values.
         gspacing : (number, number), optional
             spacing between grid lines (default (30, 30)).
+
         limit : [[float,float],[float,float]], optional
             output map extent geographic values [[lon0,lon1], [lat0,lat1]]
             (default is calculated from min max values).
@@ -475,41 +575,43 @@ class XYZ(object):
             options are: 'c'oarse|'l'ow|'h'igh.
         map_buffer : float, optional
             adds extra buffer to map_limit (default None).
+        plt_type : str, optional
+            plot type option (default 'pcolormesh'). available options are
+            'hexbin'|'contour'|'pcolormesh'|'scatter'.
+        projection : str, optional
+            output map projection (default 'cyl'indrical).
+
+        Scatter plot/marker properties:
         s_color : str, optional
-            marker colours for scatter points (default z data)
+            marker colours for scatter points (default z data).
         s_marker : str, optional
-            marker style for scatter points (default 's'quare)
+            marker style for scatter points (default 's'quare).
         s_ms : int, optional
             marker size for scatter points (default 20).
         s_lw : number, optional
             linewidth of non-filled markers (e.g., '+', 'x')
+
+        Statistic:
         stat : str, optional
             statistic to use for data binning before plotting (default 'mean')
-            see griddata. Not used when ``plt_type='scatter'``.
-        plt_type : str, optional
-            plot type option (default 'pcolormesh'). available options are
-            'hexbin'|'contour'|'pcolormesh'|'scatter'.
-        c_lines : bool, optional
-            Also draw contour lines on top (default: False)
-        c_ecolor : mpl.color, optional
-            Set contour line colours (default '0.5')
-        c_levels : int or array_like, optional
-            Determines the number and positions of the contour lines / regions.
-            An integer value indicates number of levels (mpl decides the
-            boundaries) where are an array specifies the boundaries
-            (default 15)
-        c_smooth : bool, optional
-            Smooth contour plot if plt_type is set to 'contour' (default False)
-        projection : str, optional
-            output map projection (default 'cyl'indrical).
+            Other options are mean|avg|average, std, median, count, sum|total,
+            min, max.
+            Not used when ``plt_type='scatter'``.
+        norm : bool, optional
+            normalize statistic values between 0 and 1 (default False).
+
         title : str, optional
             title string on map (default is no title).
+        use_cartopy : bool, optional
+            Force maps to use cartopy in place of default basemap.
+        verbose : bool, optional
+            verbose mode (default False).
+
+        Data scaling:
         vmax : float, optional
             maximum value for plot scaling (default max(data)).
         vmin : float, optional
             minimum value for plot scaling (default min(data))
-        verbose : bool, optional
-            verbose mode (default False).
 
         Returns
         -------
@@ -558,12 +660,16 @@ class XYZ(object):
         limit = np.array(
             kw.get('limit', np.array(
                 [[self.x.min(), self.x.max()], [self.y.min(), self.y.max()]])))
+
         mbuf = kw.get('map_buffer', None)
         if mbuf:
             limit += np.array([[-mbuf, mbuf], [-mbuf, mbuf]])
             for i in (0, 1):
                 limit[0][i] = min(max(limit[0][i], -180), 180)
                 limit[1][i] = min(max(limit[1][i], -90), 90)
+
+        # normalise stat
+        norm = kw.get('norm', False)
 
         if globe is True:
             limit = self.limit
@@ -585,10 +691,13 @@ class XYZ(object):
         if plotype.lower() in ('hexbin', 'contour', 'pcolormesh'):
             if self.G is None:
                 self.G, self.xc, self.yc = self.griddata(
-                    method=stat, delta=delta, order=True)
+                    method=stat, delta=delta, norm=norm, order=True)
 
         if stat.lower() == 'count':
             vmin, vmax = self.G.min(), self.G.max()
+        if norm:
+            vmin, vmax = 0, 1
+            cbtitle += ' (norm)'
 
         if clip is True:
             limit[0] = np.clip(limit[0], -180., 180.)
@@ -1976,70 +2085,6 @@ def yjd2dt(yjd, fmt='%Y%j'):
     return [datetime.strptime(i, fmt).date() for i in yjd]
 
 
-class Integer(object):
-    """The usual single-bit operations will work on any Python integer."""
-
-    def __init__(self, int_type):
-        super(Integer, self).__init__()
-        self.int_type = int_type
-
-    def test_bit(self, offset, mask_type=None):
-        """test_bit() returns a non-zero result, 2**offset, if the bit at
-        'offset' is one.
-
-        Parameters
-        ----------
-        offset : int
-            Bit position to test.  It is up to the user to make sure that the
-            value of offset makes sense in the context of the program
-        mask_type : str, optional
-            Returns a boolean (True|False) mask, if set to 'bool' or
-            a binary (1|0) mask if set to 'bin' or 'int', instead of 2**offset.
-
-        Returns
-        -------
-        int_type or boolean
-            Description
-
-        Examples
-        --------
-        test 3rd bit for 10
-
-        >>> print(Integer(10).test_bit(3))
-        8
-
-        >>> print(Integer(10).test_bit(3, mask_type='bool'))
-        True
-
-        >>> print(Integer(10).test_bit(3, mask_type='int'))
-        1
-        """
-        mask = 1 << offset
-        if mask_type is 'bool':
-            return(self.int_type & mask != 0)
-        elif mask_type in ('int', 'bin'):
-            return(self.int_type & mask != 0) * 1
-        else:
-            return(self.int_type & mask)
-
-    def set_bit(self, offset):
-        """set_bit() returns an integer with the bit at 'offset' set to 1."""
-        mask = 1 << offset
-        return(self.int_type | mask)
-
-    def clear_bit(self, offset):
-        """clear_bit() returns an integer with the bit at 'offset' cleared."""
-        mask = ~(1 << offset)
-        return(self.int_type & mask)
-
-    def toggle_bit(self, offset):
-        """toggle_bit() returns an integer with the bit at 'offset' inverted,
-        0 -> 1 and 1 -> 0.
-        """
-        mask = 1 << offset
-        return(self.int_type ^ mask)
-
-
 def testBit(int_type, offset):
     """testBit() returns a non-zero result, 2**offset, if the bit at 'offset'
     is one.
@@ -2073,3 +2118,11 @@ if __name__ == "__main__":
     # import doctest
     # doctest.testmod()
     # print("done.")
+
+    # - Example: XYZ(x, y, z).mapdata(...)
+    # from numpy.random import normal, randint
+    # N = 400
+    # x = randint(50, 100, N)
+    # y = randint(-20, 20, N)
+    # z = normal(3, 1, N)
+    # XYZ(x, y, z).mapdata(stat='count', use_cartopy=False, delta=2).show()

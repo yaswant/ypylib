@@ -10,6 +10,8 @@ import numpy as np
 import cartopy.crs as ccrs
 from ypylib.sdf import h5Parse
 from ypylib.utils import log
+from ypylib import mplconfigx
+mplconfigx.load()
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
