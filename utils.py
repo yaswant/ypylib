@@ -249,7 +249,7 @@ class XYZ(object):
         self.z = np.array(z)
         # bin parameters for griddata
         self.delta = (1, 1)
-        self.limit = np.array([[-180., 180.], [-90., 90.]])
+        self.limit = np.array([[-180, 180], [-90, 90]])
         # plot parameters used in mapdata
         self.figsize = (8, 5)
         self.figheight = self.figsize[1]
@@ -378,7 +378,7 @@ class XYZ(object):
             The statistic to compute (default is 'mean'). Available statistics
             are: 'mean', 'std', median', 'count', 'sum', 'min', 'max'
         norm : bool, optional
-            Normalize (devide by max value of) gridded output values.
+            Normalize (rescale values between 0 and 1) gridded output values.
         order : bool, optional
             If True, returns a upside-down flip and rotated array (default
             False)
@@ -445,7 +445,8 @@ class XYZ(object):
 
         # normalise gridded data if requested
         if norm:
-            G /= G.max()
+            gmin, gmax = G.min(), G.max()
+            G = (G - gmin) / (gmax - gmin)
 
         self.G, self.xc, self.yc = G, xc, yc
 
@@ -491,12 +492,32 @@ class XYZ(object):
         plt.tight_layout()
         return plt
 
-    def mapdata(self, use_cartopy=False, **kw):
+    def shift_midpoints(self, **kw):
+        """Shift x and y vectors by half-grid for pcolormesh"""
+        # pcolormesh grid origins in bottom-left so shift by half grid
+        # to show each grid at grid centre
+
+        # - expand/and shift x grid centre
+        xe = np.zeros(self.xc.size + 2)
+        xe[1:-1] = self.xc
+        xe[0] = self.xc[0] - np.diff(self.xc)[0]
+        xe[-1] = self.xc[-1] + np.diff(self.xc)[-1]
+        xc = xe[:-1] + 0.5 * (np.diff(xe))
+
+        # - expand/and shift y grid centre
+        ye = np.zeros(self.yc.size + 2)
+        ye[1:-1] = self.yc
+        ye[0] = self.yc[0] - np.diff(self.yc)[0]
+        ye[-1] = self.yc[-1] + np.diff(self.yc)[-1]
+        yc = ye[:-1] + 0.5 * (np.diff(ye))
+        return xc, yc
+
+    def mapdata(self, use_cartopy=True, **kw):
         """Render xyz data on map.
 
         Parameters
         ----------
-        Contour proerties:
+        Contour properties:
         c_ecolor : mpl.color, optional
             Set contour line colours (default '0.5')
         c_levels : int or array_like, optional
@@ -508,6 +529,10 @@ class XYZ(object):
             Also draw contour lines on top (default: False)
         c_smooth : bool, optional
             Smooth contour plot if plt_type is set to 'contour' (default False)
+        c_sm_sigma : The standard deviations of the Gaussian filter applied
+            for smoothed contour (increase blurriness of the image.
+            Given for each axis as a sequence, or as a single number, in which
+            case it is equal for all axes. (default: 0)
 
         Colorbar properties:
         cb_extend : str, optional
@@ -549,14 +574,14 @@ class XYZ(object):
 
         Grid(line) properties:
         gcol : str, optional
-            colors for parallel and meridian lines (default 'gray').
+            colours for parallel and meridian lines (default 'grey').
         gline : (number, number), optional
             grid line style that is dash pattern for meridians and parallels
             (default (None, None) for solid line). For example,
             ``gline = (1, 1)`` will draw 1 pixel on, 1 pixel off.
             Available for Basemap version only.
         gtextcolor : str, optional
-            gridline text color (default '#333333') available for cartopy only.
+            gridline text colour (default '#333333') available for Cartopy only
         gtfamily : str, optional
             gridline text family (default 'monospace').
         gtextsize : number, optional
@@ -575,9 +600,12 @@ class XYZ(object):
             options are: 'c'oarse|'l'ow|'h'igh.
         map_buffer : float, optional
             adds extra buffer to map_limit (default None).
+        pc_midpoints : bool, optional
+            use grid centres to be the midpoints of pcolormesh patches
+            (default True).
         plt_type : str, optional
             plot type option (default 'pcolormesh'). available options are
-            'hexbin'|'contour'|'pcolormesh'|'scatter'.
+            'hexbin'|'contour'|'tricontour'|pcolormesh'|'scatter'.
         projection : str, optional
             output map projection (default 'cyl'indrical).
 
@@ -591,6 +619,9 @@ class XYZ(object):
         s_lw : number, optional
             linewidth of non-filled markers (e.g., '+', 'x')
 
+        show_datapoints : overlay markers at original data points.
+        show_gridpoints : overlay markers at grid points.
+
         Statistic:
         stat : str, optional
             statistic to use for data binning before plotting (default 'mean')
@@ -599,6 +630,7 @@ class XYZ(object):
             Not used when ``plt_type='scatter'``.
         norm : bool, optional
             normalize statistic values between 0 and 1 (default False).
+            This also applies for plt_type='scatter'
 
         title : str, optional
             title string on map (default is no title).
@@ -632,8 +664,10 @@ class XYZ(object):
             use_cartopy = True
 
         stat = kw.get('stat', 'mean')
+        stat = stat.lower()
         describe_data = kw.get('describe_data', False)
         plotype = kw.get('plt_type', 'pcolormesh')
+        plotype = plotype.lower()
         # ms = kw.get('markersize', 20)
         cbaron = kw.get('cb_on', True)
         cbloc = kw.get('cb_loc', 'bottom')
@@ -643,7 +677,7 @@ class XYZ(object):
         cbtitle = kw.get('cb_title', stat)
         auto_cbtha = ['right', 'center'][cbextend in ('max', 'both')]
         cbtha = kw.get('cbt_ha', auto_cbtha)
-        cbtpos = kw.get('cbt_pos', [(0.5, 0.75), (1, 0.75)][cbtha is 'right'])
+        cbtpos = kw.get('cbt_pos', [(0.5, 0.75), (1, 0.75)][cbtha == 'right'])
         cmap = kw.get('cmap', 'Spectral_r')
         delta = kw.get('delta', self.delta)
         drawcountries = kw.get('drawcountries', False)
@@ -656,6 +690,9 @@ class XYZ(object):
         gtf = kw.get('gtfamily', 'monospace')
         gts = kw.get('gtextsize', 8)
         globe = kw.get('globe', False)
+        midpoints = kw.get('pc_midpoints', True)
+        show_datapoints = kw.get('show_datapoints', False)
+        show_gridpoints = kw.get('show_gridpoints', False)
 
         limit = np.array(
             kw.get('limit', np.array(
@@ -675,8 +712,6 @@ class XYZ(object):
             limit = self.limit
             gspacing = kw.get('gspacing', self.gspacing)
         else:
-            # auto_gs = (np.floor(self.x.ptp() / 4),
-            # np.floor(self.y.ptp() / 4))
             auto_gs = (np.floor(limit[0].ptp() / 4),
                        np.floor(limit[1].ptp() / 4))
             gspacing = kw.get('gspacing', auto_gs)
@@ -688,13 +723,16 @@ class XYZ(object):
         vmax = kw.get('vmax', self.z.max())
         verb = kw.get('verbose', False)
 
-        if plotype.lower() in ('hexbin', 'contour', 'pcolormesh'):
+        if plotype in ('contour', 'hexbin', 'pcolormesh'):
             if self.G is None:
                 self.G, self.xc, self.yc = self.griddata(
                     method=stat, delta=delta, norm=norm, order=True)
+            # 2D grid centres
+            xxc, yyc = np.meshgrid(self.xc, self.yc)
 
-        if stat.lower() == 'count':
-            vmin, vmax = self.G.min(), self.G.max()
+            if stat in 'count':
+                vmin, vmax = self.G.min(), self.G.max()
+
         if norm:
             vmin, vmax = 0, 1
             cbtitle += ' (norm)'
@@ -747,9 +785,9 @@ class XYZ(object):
                 ax = fig.add_subplot(111, projection=proj, title=title)
                 # ax = plt.axes(projection=proj, title=title)
 
-            if globe is False:
-                # ax.set_extent(limit[0] + limit[1], crs=data_proj)
-                ax.set_extent(limit.ravel(), crs=data_proj)
+            # if globe is False:
+            #     ax.set_extent(limit.ravel(), crs=data_proj)
+            ax.set_extent(limit.ravel(), crs=data_proj)
 
             if drawcountries:
                 countries = cartopy.feature.NaturalEarthFeature(
@@ -798,6 +836,9 @@ class XYZ(object):
                     '\'{}\' not implemented yet.\n'
                     'Available projections are: {}\n'.format(proj, valid_proj))
             try:
+                if proj in ('moll', 'robin', 'sinu'):
+                    clat, clon = 0, 0
+                # print(proj, limit, clon, clat)
                 ax = Basemap(
                     projection=proj, lat_0=clat, lon_0=clon, resolution=mres,
                     llcrnrlon=limit[0][0], llcrnrlat=limit[1][0],
@@ -817,8 +858,8 @@ class XYZ(object):
         # adjust subplot position based on color bar location
         if cbloc in ('top', 'bottom'):
             orient = 'horizontal'
-            bot = [0.05, 0.15][cbloc is 'bottom']
-            top = [0.85, 0.9][cbloc is 'bottom']
+            bot = [0.05, 0.15][cbloc == 'bottom']
+            top = [0.85, 0.9][cbloc == 'bottom']
             cb_tick_kw = {
                 'labelsize': 9,
                 'direction': 'in',
@@ -831,8 +872,8 @@ class XYZ(object):
                 hspace=0, wspace=0)
         elif cbloc in ('left', 'right'):
             orient = 'vertical'
-            left = [0.15, 0.075][cbloc is 'right']
-            right = [0.95, 0.85][cbloc is 'right']
+            left = [0.15, 0.075][cbloc == 'right']
+            right = [0.95, 0.85][cbloc == 'right']
             cbpad = kw.get('cb_pad', '5%')
             cb_tick_kw = {
                 'labelsize': 9,
@@ -843,22 +884,22 @@ class XYZ(object):
             cb_title_kw = {
                 'fontsize': 10,
                 'rotation': 'vertical',
-                'position': [-0.25, [0.98, 0.5][cbtha is 'center']],
-                'va': ['top', 'center'][cbtha is 'center'],
+                'position': [-0.25, [0.98, 0.5][cbtha == 'center']],
+                'va': ['top', 'center'][cbtha == 'center'],
             }
             fig.subplots_adjust(
                 bottom=0.15, top=0.85, left=left, right=right,
                 hspace=0, wspace=0)
 
-        # add data on map
-        if plotype is 'hexbin':
-            xx, yy = np.meshgrid(self.xc, self.yc)
+        # - add data on map
+        # -- hexbin
+        if plotype in 'hexbin':
             if use_cartopy:
                 xxt, yyt = transform_cartopy_coord(
-                    xx.ravel(), yy.ravel(), data_proj, proj)
+                    xxc.ravel(), yyc.ravel(), data_proj, proj)
             else:
                 xxt, yyt = transform_basemap_coord(
-                    xx.ravel(), yy.ravel(), ax)
+                    xxc.ravel(), yyc.ravel(), ax)
 
             im1 = ax.hexbin(xxt, yyt, C=self.G.data.ravel(),
                             vmin=vmin, vmax=vmax, cmap=cmap)
@@ -868,15 +909,15 @@ class XYZ(object):
             # origin = kw.get('c_origin', 'lower')
             c_levels = kw.get('c_levels', 15)
             c_smooth = kw.get('c_smooth', False)
-            c_sm_sigma = kw.get('c_sm_sigma', 1)
+            c_sm_sigma = kw.get('c_sm_sigma', 0)
             c_lines = kw.get('c_lines', False)
             c_color = kw.get('c_color', '0.5')
             c_lw = kw.get('c_lw', 0.5)
             c_lfs = kw.get('c_lfs', 'x-small')
             norm = mpl.colors.Normalize()  # normalise cmap colours
 
-            # use experimental: tricontour(f)
-            if plotype is 'tricontour':
+            # -- tricontour(f): experimental
+            if plotype == 'tricontour':
                 if use_cartopy:
                     xt, yt = transform_cartopy_coord(
                         self.x, self.y, data_proj, proj)
@@ -891,15 +932,16 @@ class XYZ(object):
                     im2 = plt.tricontour(
                         xt, yt, self.z, c_levels, colors=c_color,
                         linewidths=c_lw)
+                xxt, yyt = xt, yt
 
-            # use contour(f)
+            # -- contour(f)
             else:
-                xx, yy = np.meshgrid(self.xc, self.yc)
                 if use_cartopy:
-                    xxt, yyt = transform_cartopy_coord(xx, yy, data_proj, proj)
+                    xxt, yyt = transform_cartopy_coord(
+                        xxc, yyc, data_proj, proj)
                 else:
                     xxt, yyt = transform_basemap_coord(
-                        xx.ravel(), yy.ravel(), ax)
+                        xxc.ravel(), yyc.ravel(), ax)
                     xxt = np.reshape(xxt, (len(self.yc), len(self.xc)))
                     yyt = np.reshape(yyt, (len(self.yc), len(self.xc)))
 
@@ -907,11 +949,10 @@ class XYZ(object):
                     im1 = ax.contourf(
                         xxt, yyt,
                         gaussian_filter(self.G, sigma=c_sm_sigma, order=0),
-                        c_levels,  # vmin=vmin, vmax=vmax,
-                        norm=norm, cmap=cmap)
+                        # zoom(self.G, 3),
+                        c_levels, norm=norm, cmap=cmap)
                 else:
                     im1 = ax.contourf(xxt, yyt, self.G, c_levels,
-                                      # vmin=vmin, vmax=vmax,
                                       norm=norm, cmap=cmap)
 
                 # overlay contour lines and draw labels
@@ -924,7 +965,8 @@ class XYZ(object):
                     plt.clabel(im2, inline=True, fontsize=c_lfs, fmt='%g')
                     mpl.rcParams['font.family'] = _family
 
-        elif plotype is 'scatter':
+        # -- scatter
+        elif plotype in 'scatter':
             cbtitle = kw.get('cb_title', ' ')
             s_ms = kw.get('s_ms', 20)
             s_marker = kw.get('s_marker', 's')
@@ -943,19 +985,54 @@ class XYZ(object):
                 xt, yt, c=s_color, marker=s_marker, s=s_ms, lw=s_lw, zorder=5,
                 # rasterized=True, linewidth=0, lw=0,
                 vmin=vmin, vmax=vmax, cmap=cmap)
+            xxt, yyt = xt, yt
 
-        else:  # ## pcolormesh (default) ##
-            xx, yy = np.meshgrid(self.xc, self.yc)
-            if use_cartopy:
-                xxt, yyt = transform_cartopy_coord(xx, yy, data_proj, proj)
+        # -- pcolormesh
+        elif plotype in 'pcolormesh':
+            if midpoints:
+                xc, yc = self.shift_midpoints()
+                xxc, yyc = np.meshgrid(xc, yc)
             else:
-                xxt, yyt = transform_basemap_coord(xx.ravel(), yy.ravel(), ax)
-                xxt = np.reshape(xxt, (len(self.yc), len(self.xc)))
-                yyt = np.reshape(yyt, (len(self.yc), len(self.xc)))
+                xc, yc = self.xc, self.yc
+
+            xxx, yyy = np.meshgrid(self.xc, self.yc)
+
+            if use_cartopy:
+                xxt, yyt = transform_cartopy_coord(xxc, yyc, data_proj, proj)
+                xct, yct = transform_cartopy_coord(xxx, yyy, data_proj, proj)
+            else:
+                xxt, yyt = transform_basemap_coord(
+                    xxc.ravel(), yyc.ravel(), ax)
+                xxt = np.reshape(xxt, (len(yc), len(xc)))
+                yyt = np.reshape(yyt, (len(yc), len(xc)))
+                xct, yct = transform_basemap_coord(
+                    xxx.ravel(), yyy.ravel(), ax)
 
             im1 = ax.pcolormesh(
                 xxt, yyt, self.G, vmin=vmin, vmax=vmax, rasterized=True,
                 shading='flat', cmap=cmap)
+
+        # -- invalid plt_type
+        else:
+            raise NotImplementedError(plotype)
+
+        # - overlay data points
+        if show_datapoints:
+            if use_cartopy:
+                xt, yt = transform_cartopy_coord(
+                    self.x, self.y, data_proj, proj)
+            else:
+                xt, yt = transform_basemap_coord(self.x, self.y, ax)
+            ax.scatter(xt, yt, marker='+', linewidth=0.5, c='b', zorder=6,
+                       alpha=0.5)
+
+        # - overlay grid centres
+        if show_gridpoints:
+            sckw = dict(marker='+', linewidth=0.5, c='k', zorder=6, alpha=0.5)
+            if plotype == 'pcolormesh':
+                ax.scatter(xct, yct, **sckw)
+            else:
+                ax.scatter(xxt, yyt, **sckw)
 
         if describe_data:
             s = describe(self.z)
@@ -977,10 +1054,6 @@ class XYZ(object):
         if cbaron:
             if Basemap is None or use_cartopy is True:
                 cb_ax = fig.add_axes([0, 0, 0.1, .1])
-                # cb = plt.colorbar(
-                #     im1, orientation='horizontal', aspect=40,
-                #     pad=pct2num(cbpad), shrink=0.9, format='%g',
-                #     extend=cbextend)
                 def_cb_pad = ['7%', '5%'][cbloc in ('left', 'right')]
                 cbpad = kw.get('cb_pad', def_cb_pad)
                 fig.canvas.mpl_connect(
@@ -2121,8 +2194,23 @@ if __name__ == "__main__":
 
     # - Example: XYZ(x, y, z).mapdata(...)
     # from numpy.random import normal, randint
-    # N = 400
-    # x = randint(50, 100, N)
-    # y = randint(-20, 20, N)
+    # import cartopy.crs as ccrs
+    # N = 200
+    # x = randint(60, 100, N)
+    # y = randint(0, 40, N)
     # z = normal(3, 1, N)
-    # XYZ(x, y, z).mapdata(stat='count', use_cartopy=False, delta=2).show()
+    # XYZ(x, y, z).mapdata(delta=5,
+    #                      stat='count',
+    #                      # plt_type='contour',
+    #                      # c_smooth=True,
+    #                      # use_cartopy=False, projection='robin',
+    #                      # projection=ccrs.Robinson(),
+    #                      # globe=True,
+    #                      # gspacing=(45, 45),
+    #                      # drawcountries=True,
+    #                      show_datapoints=True,
+    #                      # pc_midpoints=False,
+    #                      # show_gridpoints=True,
+    #                      # norm=False,
+    #                      # cb_on=False,
+    #                      describe_data=False).show()
