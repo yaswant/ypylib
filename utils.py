@@ -232,7 +232,7 @@ class List(list):
 class XYZ(object):
     """Discrete triplet data (x, y, z) analyser."""
 
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, wrap_lon=False):
         """XYZ Constructor.
 
         Parameters
@@ -247,6 +247,8 @@ class XYZ(object):
         self.x = np.array(x)
         self.y = np.array(y)
         self.z = np.array(z)
+        if wrap_lon:
+            self.x = ((self.x + 180) % 360) - 180
         # bin parameters for griddata
         self.delta = (1, 1)
         self.limit = np.array([[-180, 180], [-90, 90]])
@@ -348,8 +350,8 @@ class XYZ(object):
         else:
             return Hv / Hn, xc, yc
 
-    def griddata(self, method='mean', **kw):
-        """Compute a bidimensional binned statistic for one or more sets of
+    def griddata(self, stat='mean', **kw):
+        """Compute a bi-dimensional binned statistic for one or more sets of
         data.
 
         This is a generalization of a histogram2d function implemented in
@@ -374,7 +376,7 @@ class XYZ(object):
         limit : [[float, float], [float, float]], optional
             Output domain limit [[x0,x1], [y0,y1]] (default calculated from
             actual x and y range)
-        method : str, optional
+        stat : str, optional
             The statistic to compute (default is 'mean'). Available statistics
             are: 'mean', 'std', median', 'count', 'sum', 'min', 'max'
         norm : bool, optional
@@ -395,7 +397,7 @@ class XYZ(object):
         See also
         --------
         bindata (deprecated)
-            equivalent to method='mean'
+            equivalent to stat='mean'
         """
         try:
             from collections.abc import Sequence
@@ -407,16 +409,21 @@ class XYZ(object):
         order = kw.get('order', False)
         limit = kw.get('limit', self._get_extent())
         norm = kw.get('norm', False)
+        stat = kw.get('method', stat)
         # limit = np.asarray(limit)
 
-        # parse method parameters
-        method = method.lower()
-        if method in ('sum', 'total'):
-            method = 'sum'
-        if method in ('avg', 'average', 'mean'):
-            method = 'mean'
-        if method in ('count', 'freq', 'frequency'):
-            method = 'count'
+        # parse stat parameter
+        stat = stat.lower()
+        stat = 'sum' if stat in ('sum', 'total') else stat
+        stat = 'mean' if stat in ('avg', 'average', 'mean') else stat
+        stat = 'count' if stat in ('count', 'frequency') else stat
+
+        # if stat in ('sum', 'total'):
+        #     stat = 'sum'
+        # if stat in ('avg', 'average', 'mean'):
+        #     stat = 'mean'
+        # if stat in ('count', 'freq', 'frequency'):
+        #     stat = 'count'
 
         if globe is True:
             limit = self.limit
@@ -428,15 +435,17 @@ class XYZ(object):
         # construct x and y bins
         xs = np.arange(limit[0][0], limit[0][1] + delta[0], delta[0])
         ys = np.arange(limit[1][0], limit[1][1] + delta[1], delta[1])
+
         stat4 = binned_statistic_2d(
-            self.x, self.y, self.z, statistic=method, bins=[xs, ys])
+            self.x, self.y, self.z, statistic=stat, bins=[xs, ys])
 
         # bin edges to bin centres
         xc = (stat4[1][1:] + stat4[1][:-1]) / 2
         yc = (stat4[2][1:] + stat4[2][:-1]) / 2
+        # print(xc.min(), xc.max(), yc.min(), yc.max())
 
-        # mask sum and count arrays when no data available in the bin
-        if method in ('count', 'sum'):
+        # mask sum, std and count arrays when no data available in the bin
+        if stat in ('count', 'std', 'sum'):
             count4 = binned_statistic_2d(
                 self.x, self.y, self.z, statistic='count', bins=[xs, ys])
             G = np.ma.masked_where(count4[0] == 0, stat4[0])
@@ -456,6 +465,30 @@ class XYZ(object):
             return self.G, self.xc, self.yc
         else:
             return self.G, self.xc, self.yc
+
+    def shift_midpoints(self, **kw):
+        """Shift x and y vectors by half-grid for pcolormesh
+
+        ``pcolormesh`` patches bottom-left is usually aligned with grid centre
+        (x,y) which makes the plot shift by half-grid in top-right direction.
+        This method applies the correction so that the patch centres are
+        aligned with the grid centre.
+        """
+
+        # - expand/and shift x grid centre
+        xe = np.zeros(self.xc.size + 2)
+        xe[1:-1] = self.xc
+        xe[0] = self.xc[0] - np.diff(self.xc)[0]
+        xe[-1] = self.xc[-1] + np.diff(self.xc)[-1]
+        xc = xe[:-1] + 0.5 * (np.diff(xe))
+
+        # - expand/and shift y grid centre
+        ye = np.zeros(self.yc.size + 2)
+        ye[1:-1] = self.yc
+        ye[0] = self.yc[0] - np.diff(self.yc)[0]
+        ye[-1] = self.yc[-1] + np.diff(self.yc)[-1]
+        yc = ye[:-1] + 0.5 * (np.diff(ye))
+        return xc, yc
 
     def plot(self, **kw):
         """Line plot (x, y, z) as series."""
@@ -492,25 +525,23 @@ class XYZ(object):
         plt.tight_layout()
         return plt
 
-    def shift_midpoints(self, **kw):
-        """Shift x and y vectors by half-grid for pcolormesh"""
-        # pcolormesh grid origins in bottom-left so shift by half grid
-        # to show each grid at grid centre
+    def pcolormesh(self, delta=(1, 1), **kw):
+        """Pcolormesh plot (x, y, z) data triplets."""
+        _f, ax = plt.subplots(1, figsize=self.figsize)
+        G, xc, yc = self.griddata(delta=delta)
+        xx, yy = np.meshgrid(xc, yc)
+        im = ax.pcolormesh(xx, yy, G, shading='flat', **kw)
+        plt.colorbar(im)
+        plt.tight_layout()
+        return plt
 
-        # - expand/and shift x grid centre
-        xe = np.zeros(self.xc.size + 2)
-        xe[1:-1] = self.xc
-        xe[0] = self.xc[0] - np.diff(self.xc)[0]
-        xe[-1] = self.xc[-1] + np.diff(self.xc)[-1]
-        xc = xe[:-1] + 0.5 * (np.diff(xe))
-
-        # - expand/and shift y grid centre
-        ye = np.zeros(self.yc.size + 2)
-        ye[1:-1] = self.yc
-        ye[0] = self.yc[0] - np.diff(self.yc)[0]
-        ye[-1] = self.yc[-1] + np.diff(self.yc)[-1]
-        yc = ye[:-1] + 0.5 * (np.diff(ye))
-        return xc, yc
+    def contour(self, delta=(1, 1), **kw):
+        """contour plot (x, y, z) data triplets."""
+        _f, ax = plt.subplots(1, figsize=self.figsize)
+        G, xc, yc = self.griddata(delta=delta)
+        im = ax.contour(xc, yc, G, **kw)
+        plt.clabel(im, inline=True, fontsize=6, fmt='%g')
+        return plt
 
     def mapdata(self, use_cartopy=True, **kw):
         """Render xyz data on map.
@@ -564,13 +595,21 @@ class XYZ(object):
             resolution specs for binning original data in x and y direction
             (default (1, 1).
         describe_data : bool, optional
-            add data statistical description(min, max, mean, ..)
+            add data statistical description (min, max, mean, ..) for
+            un-gridded data
         drawcountries : bool, optional
             draw country boundaries (default False).
         figsize : (number, number), optional
             output figure size (default auto adjusted with a base height of 5).
         figheight : number, optional
             control output figure base height (default 5)
+
+        fillcontinents : bool, optional
+            Mask/fill continent with colour
+        land_color : str, optional
+            Fill land colour (default: grey)
+        lake_color : str, optional
+            Fill lake colour (default: none)
 
         Grid(line) properties:
         gcol : str, optional
@@ -625,8 +664,8 @@ class XYZ(object):
         Statistic:
         stat : str, optional
             statistic to use for data binning before plotting (default 'mean')
-            Other options are mean|avg|average, std, median, count, sum|total,
-            min, max.
+            Other options are
+            mean|avg|average, std, median, count, sum|total, min, max.
             Not used when ``plt_type='scatter'``.
         norm : bool, optional
             normalize statistic values between 0 and 1 (default False).
@@ -692,7 +731,18 @@ class XYZ(object):
         globe = kw.get('globe', False)
         midpoints = kw.get('pc_midpoints', True)
         show_datapoints = kw.get('show_datapoints', False)
+        datapoint_size = kw.get('datapoint_size', 2)
+        datapoint_color = kw.get('datapoint_size', 'k')
         show_gridpoints = kw.get('show_gridpoints', False)
+        fillcontinents = kw.get('fillcontinents', False)
+        land_color = kw.get('land_color', '#DEDEDE')
+        lake_color = kw.get('lake_color', 'none')
+        # ocean_color = kw.get('ocean_color', 'none')
+        mask_land = kw.get('mask_land', False)
+        lm_zorder = 0 if use_cartopy is True else 1
+        if mask_land:
+            fillcontinents = True
+            lm_zorder = 2
 
         limit = np.array(
             kw.get('limit', np.array(
@@ -726,11 +776,11 @@ class XYZ(object):
         if plotype in ('contour', 'hexbin', 'pcolormesh'):
             if self.G is None:
                 self.G, self.xc, self.yc = self.griddata(
-                    method=stat, delta=delta, norm=norm, order=True)
+                    stat=stat, delta=delta, norm=norm, order=True)
             # 2D grid centres
             xxc, yyc = np.meshgrid(self.xc, self.yc)
 
-            if stat in 'count':
+            if stat in ('count', 'sum'):
                 vmin, vmax = self.G.min(), self.G.max()
 
         if norm:
@@ -760,6 +810,9 @@ class XYZ(object):
             fig = mpl.pyplot.gcf()
 
         if Basemap is None or use_cartopy is True:  # ------------ use cartopy
+
+            # lm_zorder = 10 if mask_land else 0
+
             data_proj = cartopy.crs.PlateCarree()
             proj = kw.get('projection', data_proj)
             try:
@@ -794,7 +847,7 @@ class XYZ(object):
                     category='cultural', name='admin_0_countries',
                     scale=mres, linewidth=0.5,
                     facecolor='none', edgecolor='k', alpha=0.6,)
-                ax.add_feature(countries)
+                ax.add_feature(countries, zorder=lm_zorder + 1)
                 # ax.add_feature(
                 #     cartopy.feature.BORDERS, linewidth=0.4, alpha=0.5)
 
@@ -805,8 +858,11 @@ class XYZ(object):
                     facecolor='none', edgecolor='k', alpha=0.5)
                 ax.add_feature(states_provinces)
 
-            # add coastline
-            ax.coastlines(lw=0.5, resolution=mres)
+            # add continent, coastline
+            if fillcontinents:
+                ax.add_feature(cartopy.feature.LAND, zorder=lm_zorder)
+
+            ax.coastlines(lw=0.5, resolution=mres, zorder=lm_zorder + 1)
 
             if proj_name in ('PlateCarree', 'Mercator'):
                 gl = ax.gridlines(draw_labels=True, **gl_kw)
@@ -818,6 +874,8 @@ class XYZ(object):
                 ax.gridlines(**gl_kw)
 
         else:  # ------------------------------------------------- use Basemap
+            # lm_zorder = 10 if mask_land else 1
+
             fig.add_axes([0.05, 0.05, 0.9, 0.9], title=title)
             proj = kw.get('projection', 'cyl')
             grid_kw = {
@@ -852,8 +910,12 @@ class XYZ(object):
             ax.drawparallels(
                 self._get_latts(gspacing[1]), labels=self.ylab, **grid_kw)
             if drawcountries:
-                ax.drawcountries(linewidth=0.4, color='#333333')
-            ax.drawcoastlines(linewidth=0.5)
+                ax.drawcountries(linewidth=0.4, color='#333333',
+                                 zorder=lm_zorder + 1)
+            if fillcontinents:
+                ax.fillcontinents(color=land_color, lake_color=lake_color,
+                                  zorder=lm_zorder)
+            ax.drawcoastlines(linewidth=0.5, zorder=lm_zorder + 1)
 
         # adjust subplot position based on color bar location
         if cbloc in ('top', 'bottom'):
@@ -949,7 +1011,6 @@ class XYZ(object):
                     im1 = ax.contourf(
                         xxt, yyt,
                         gaussian_filter(self.G, sigma=c_sm_sigma, order=0),
-                        # zoom(self.G, 3),
                         c_levels, norm=norm, cmap=cmap)
                 else:
                     im1 = ax.contourf(xxt, yyt, self.G, c_levels,
@@ -967,6 +1028,10 @@ class XYZ(object):
 
         # -- scatter
         elif plotype in 'scatter':
+            if stat:
+                log.warning('stat=%s is not computed for for plt_type=%s',
+                            stat, plotype)
+
             cbtitle = kw.get('cb_title', ' ')
             s_ms = kw.get('s_ms', 20)
             s_marker = kw.get('s_marker', 's')
@@ -983,7 +1048,7 @@ class XYZ(object):
                 xt, yt = transform_basemap_coord(self.x, self.y, ax)
             im1 = ax.scatter(
                 xt, yt, c=s_color, marker=s_marker, s=s_ms, lw=s_lw, zorder=5,
-                # rasterized=True, linewidth=0, lw=0,
+                # rasterized=True, linewidth=0,
                 vmin=vmin, vmax=vmax, cmap=cmap)
             xxt, yyt = xt, yt
 
@@ -1023,8 +1088,8 @@ class XYZ(object):
                     self.x, self.y, data_proj, proj)
             else:
                 xt, yt = transform_basemap_coord(self.x, self.y, ax)
-            ax.scatter(xt, yt, marker='+', linewidth=0.5, c='b', zorder=6,
-                       alpha=0.5)
+            ax.scatter(xt, yt, marker='+', s=datapoint_size, linewidth=0.5,
+                       c=datapoint_color, zorder=6, alpha=0.5)
 
         # - overlay grid centres
         if show_gridpoints:
@@ -1036,20 +1101,37 @@ class XYZ(object):
 
         if describe_data:
             s = describe(self.z)
-            stat_str = ('min:{:g}|max:{:g}|avg:{:g}|'
-                        'var:{:g}|skw:{:.2g}|n:{:g}').format(
-                s.minmax[0], s.minmax[1], s.mean,
-                s.variance, s.skewness, s.nobs)
+            if plotype == 'scatter':
+                stat_str = (
+                    'min:{:.4g}|max:{:.4g}|avg:{:.4g}\n'
+                    'var:{:.4g}|skw:{:.4g}|nob:{:g}').format(
+                        s.minmax[0], s.minmax[1], s.mean,
+                        s.variance, s.skewness, s.nobs)
+            else:
+                sg = describe(self.G.flatten(), nan_policy='omit')
+                nobs = self.G.count()
+
+                stat_str = (
+                    ' grid [original]\n'
+                    'min {:.4g} [{:.4g}]\nmax {:.4g} [{:.4g}]\n'
+                    'avg {:.4g} [{:.4g}]\n'
+                    'var {:.4g} [{:.4g}]\nskw {:.4g} [{:.4g}]\n'
+                    '  N {:g} [{:g}]').format(
+                        sg.minmax[0], s.minmax[0], sg.minmax[1], s.minmax[1],
+                        sg.mean, s.mean, sg.variance, s.variance,
+                        sg.skewness, s.skewness, nobs, s.nobs)
+
             style = dict(
-                family='monospace', fontsize='medium', color='b',
+                family='monospace', fontsize='small', color='b',
                 verticalalignment='top', bbox=dict(
-                    boxstyle='square,pad=0', fc=(1, 1, 1, 0.8), ec='none'))
+                    boxstyle='square,pad=0', fc=(1, 1, 1, 0.9), ec='none'))
 
             if use_cartopy:
-                ax.text(0.01, 0.99, stat_str, transform=ax.transAxes, **style)
+                ax.text(0.01, 0.99, stat_str, transform=ax.transAxes,
+                        zorder=11, **style)
             else:
                 plt.annotate(stat_str, xy=(0.01, 0.991),
-                             xycoords='axes fraction', **style)
+                             xycoords='axes fraction', zorder=11, **style)
 
         if cbaron:
             if Basemap is None or use_cartopy is True:
@@ -2191,26 +2273,3 @@ if __name__ == "__main__":
     # import doctest
     # doctest.testmod()
     # print("done.")
-
-    # - Example: XYZ(x, y, z).mapdata(...)
-    # from numpy.random import normal, randint
-    # import cartopy.crs as ccrs
-    # N = 200
-    # x = randint(60, 100, N)
-    # y = randint(0, 40, N)
-    # z = normal(3, 1, N)
-    # XYZ(x, y, z).mapdata(delta=5,
-    #                      stat='count',
-    #                      # plt_type='contour',
-    #                      # c_smooth=True,
-    #                      # use_cartopy=False, projection='robin',
-    #                      # projection=ccrs.Robinson(),
-    #                      # globe=True,
-    #                      # gspacing=(45, 45),
-    #                      # drawcountries=True,
-    #                      show_datapoints=True,
-    #                      # pc_midpoints=False,
-    #                      # show_gridpoints=True,
-    #                      # norm=False,
-    #                      # cb_on=False,
-    #                      describe_data=False).show()
