@@ -18,7 +18,7 @@ try:
     from pyhdf.VS import VS  # noqa
     from pyhdf.error import HDF4Error
     h4err = None
-except ImportError as h4err:
+except ImportError as h4err:  # noqa
     pass
 from ypylib.utils import log
 # from datetime import datetime

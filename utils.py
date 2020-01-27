@@ -605,7 +605,8 @@ class XYZ(object):
             control output figure base height (default 5)
 
         fillcontinents : bool, optional
-            Mask/fill continent with colour
+            Underlay continent with solid colour.  To mask (overlay) continent
+            set mask_land=True.
         land_color : str, optional
             Fill land colour (default: grey)
         lake_color : str, optional
@@ -735,14 +736,19 @@ class XYZ(object):
         datapoint_color = kw.get('datapoint_size', 'k')
         show_gridpoints = kw.get('show_gridpoints', False)
         fillcontinents = kw.get('fillcontinents', False)
+        filloceans = kw.get('filloceans', False)
         land_color = kw.get('land_color', '#DEDEDE')
-        lake_color = kw.get('lake_color', 'none')
-        # ocean_color = kw.get('ocean_color', 'none')
+        lake_color = kw.get('lake_color', '#97B6E1')
+        ocean_color = kw.get('ocean_color', '#97B6E1')
         mask_land = kw.get('mask_land', False)
-        lm_zorder = 0 if use_cartopy is True else 1
+        mask_ocean = kw.get('mask_ocean', False)
+        zorder, lm_zorder, om_zorder = 1, 1, 1
         if mask_land:
             fillcontinents = True
             lm_zorder = 2
+        if mask_ocean:
+            filloceans = True
+            om_zorder = 2
 
         limit = np.array(
             kw.get('limit', np.array(
@@ -755,7 +761,7 @@ class XYZ(object):
                 limit[0][i] = min(max(limit[0][i], -180), 180)
                 limit[1][i] = min(max(limit[1][i], -90), 90)
 
-        # normalise stat
+        # - normalise stat
         norm = kw.get('norm', False)
 
         if globe is True:
@@ -777,11 +783,13 @@ class XYZ(object):
             if self.G is None:
                 self.G, self.xc, self.yc = self.griddata(
                     stat=stat, delta=delta, norm=norm, order=True)
-            # 2D grid centres
+            # - 2D grid centres
             xxc, yyc = np.meshgrid(self.xc, self.yc)
 
             if stat in ('count', 'sum'):
-                vmin, vmax = self.G.min(), self.G.max()
+                # vmin, vmax = self.G.min(), self.G.max()
+                vmin = kw.get('vmin', self.G.min())
+                vmax = kw.get('vmax', self.G.max())
 
         if norm:
             vmin, vmax = 0, 1
@@ -802,7 +810,7 @@ class XYZ(object):
         if verb:
             log.info('figsize={}'.format(figsize))
 
-        # draw map
+        # - draw map
         ax = kw.get('ax', None)
         if ax is None:
             fig = plt.figure(figsize=figsize)
@@ -810,8 +818,6 @@ class XYZ(object):
             fig = mpl.pyplot.gcf()
 
         if Basemap is None or use_cartopy is True:  # ------------ use cartopy
-
-            # lm_zorder = 10 if mask_land else 0
 
             data_proj = cartopy.crs.PlateCarree()
             proj = kw.get('projection', data_proj)
@@ -847,7 +853,7 @@ class XYZ(object):
                     category='cultural', name='admin_0_countries',
                     scale=mres, linewidth=0.5,
                     facecolor='none', edgecolor='k', alpha=0.6,)
-                ax.add_feature(countries, zorder=lm_zorder + 1)
+                ax.add_feature(countries, zorder=lm_zorder + 3)
                 # ax.add_feature(
                 #     cartopy.feature.BORDERS, linewidth=0.4, alpha=0.5)
 
@@ -861,8 +867,12 @@ class XYZ(object):
             # add continent, coastline
             if fillcontinents:
                 ax.add_feature(cartopy.feature.LAND, zorder=lm_zorder)
+                ax.add_feature(cartopy.feature.LAKES, zorder=lm_zorder,
+                               edgecolor='k', linewidth=0.5)
+            if filloceans:
+                ax.add_feature(cartopy.feature.OCEAN, zorder=om_zorder)
 
-            ax.coastlines(lw=0.5, resolution=mres, zorder=lm_zorder + 1)
+            ax.coastlines(lw=0.5, resolution=mres, zorder=lm_zorder + 3)
 
             if proj_name in ('PlateCarree', 'Mercator'):
                 gl = ax.gridlines(draw_labels=True, **gl_kw)
@@ -874,7 +884,6 @@ class XYZ(object):
                 ax.gridlines(**gl_kw)
 
         else:  # ------------------------------------------------- use Basemap
-            # lm_zorder = 10 if mask_land else 1
 
             fig.add_axes([0.05, 0.05, 0.9, 0.9], title=title)
             proj = kw.get('projection', 'cyl')
@@ -894,9 +903,13 @@ class XYZ(object):
                     '\'{}\' not implemented yet.\n'
                     'Available projections are: {}\n'.format(proj, valid_proj))
             try:
+                # for pseudo-cylindrical projection set the central coordinate
+                # to 0, 0.
+                # Note: Geographic subset is not respected for these
+                # projections with Basemap (use Cartopy instead).
                 if proj in ('moll', 'robin', 'sinu'):
                     clat, clon = 0, 0
-                # print(proj, limit, clon, clat)
+
                 ax = Basemap(
                     projection=proj, lat_0=clat, lon_0=clon, resolution=mres,
                     llcrnrlon=limit[0][0], llcrnrlat=limit[1][0],
@@ -909,23 +922,27 @@ class XYZ(object):
                 self._get_lonts(gspacing[0]), labels=self.xlab, **grid_kw)
             ax.drawparallels(
                 self._get_latts(gspacing[1]), labels=self.ylab, **grid_kw)
-            if drawcountries:
-                ax.drawcountries(linewidth=0.4, color='#333333',
-                                 zorder=lm_zorder + 1)
             if fillcontinents:
-                ax.fillcontinents(color=land_color, lake_color=lake_color,
-                                  zorder=lm_zorder)
-            ax.drawcoastlines(linewidth=0.5, zorder=lm_zorder + 1)
+                ax.fillcontinents(
+                    color=land_color, lake_color=lake_color, zorder=lm_zorder)
+            if filloceans:
+                ax.drawlsmask(
+                    land_color='none', ocean_color=ocean_color, lakes=True,
+                    zorder=om_zorder)
+            if drawcountries:
+                ax.drawcountries(
+                    linewidth=0.4, color='#333333', zorder=lm_zorder + 3)
+            ax.drawcoastlines(linewidth=0.5, zorder=lm_zorder + 3)
 
-        # adjust subplot position based on color bar location
+        # - adjust subplot position based on color bar location
         if cbloc in ('top', 'bottom'):
             orient = 'horizontal'
             bot = [0.05, 0.15][cbloc == 'bottom']
             top = [0.85, 0.9][cbloc == 'bottom']
             cb_tick_kw = {
-                'labelsize': 9,
-                'direction': 'in',
                 'bottom': True,
+                'direction': 'in',
+                'labelsize': 9,
                 'top': True,
             }
             cb_title_kw = {'fontsize': 10, 'ha': cbtha, 'position': cbtpos}
@@ -938,15 +955,15 @@ class XYZ(object):
             right = [0.95, 0.85][cbloc == 'right']
             cbpad = kw.get('cb_pad', '5%')
             cb_tick_kw = {
-                'labelsize': 9,
                 'direction': 'in',
+                'labelsize': 9,
                 'left': True,
                 'right': True,
             }
             cb_title_kw = {
                 'fontsize': 10,
-                'rotation': 'vertical',
                 'position': [-0.25, [0.98, 0.5][cbtha == 'center']],
+                'rotation': 'vertical',
                 'va': ['top', 'center'][cbtha == 'center'],
             }
             fig.subplots_adjust(
@@ -964,11 +981,11 @@ class XYZ(object):
                     xxc.ravel(), yyc.ravel(), ax)
 
             im1 = ax.hexbin(xxt, yyt, C=self.G.data.ravel(),
-                            vmin=vmin, vmax=vmax, cmap=cmap)
+                            gridsize=self.G.data.shape[::-1],
+                            vmin=vmin, vmax=vmax, cmap=cmap, zorder=zorder + 1)
 
         elif plotype in ('contour', 'tricontour'):
-            # contour properties
-            # origin = kw.get('c_origin', 'lower')
+            # - contour properties
             c_levels = kw.get('c_levels', 15)
             c_smooth = kw.get('c_smooth', False)
             c_sm_sigma = kw.get('c_sm_sigma', 0)
@@ -988,12 +1005,12 @@ class XYZ(object):
                         self.x.ravel(), self.y.ravel(), ax)
 
                 im1 = plt.tricontourf(xt, yt, self.z, c_levels,
-                                      norm=norm, cmap=cmap)
+                                      norm=norm, cmap=cmap, zorder=zorder + 1)
 
                 if c_lines:
                     im2 = plt.tricontour(
                         xt, yt, self.z, c_levels, colors=c_color,
-                        linewidths=c_lw)
+                        linewidths=c_lw, zorder=zorder + 2)
                 xxt, yyt = xt, yt
 
             # -- contour(f)
@@ -1011,16 +1028,16 @@ class XYZ(object):
                     im1 = ax.contourf(
                         xxt, yyt,
                         gaussian_filter(self.G, sigma=c_sm_sigma, order=0),
-                        c_levels, norm=norm, cmap=cmap)
+                        c_levels, norm=norm, cmap=cmap, zorder=zorder + 1)
                 else:
                     im1 = ax.contourf(xxt, yyt, self.G, c_levels,
-                                      norm=norm, cmap=cmap)
+                                      norm=norm, cmap=cmap, zorder=zorder + 1)
 
                 # overlay contour lines and draw labels
                 if c_lines:
                     im2 = plt.contour(
                         im1, levels=im1.levels[::2], colors=c_color,
-                        linewidths=c_lw)
+                        linewidths=c_lw, zorder=zorder + 2)
                     _family = mpl.rcParams['font.family']
                     mpl.rcParams['font.family'] = 'monospace'
                     plt.clabel(im2, inline=True, fontsize=c_lfs, fmt='%g')
@@ -1037,7 +1054,7 @@ class XYZ(object):
             s_marker = kw.get('s_marker', 's')
             s_lw = kw.get('s_lw', 1)
             s_color = kw.get('s_color', self.z)
-            # switch off colour bar for single colour markers
+            # - switch off colour bar for single colour markers
             if len(s_color) < 2:
                 cbaron = False
 
@@ -1047,9 +1064,9 @@ class XYZ(object):
             else:
                 xt, yt = transform_basemap_coord(self.x, self.y, ax)
             im1 = ax.scatter(
-                xt, yt, c=s_color, marker=s_marker, s=s_ms, lw=s_lw, zorder=5,
+                xt, yt, c=s_color, marker=s_marker, s=s_ms, lw=s_lw,
                 # rasterized=True, linewidth=0,
-                vmin=vmin, vmax=vmax, cmap=cmap)
+                vmin=vmin, vmax=vmax, cmap=cmap, zorder=zorder + 1)
             xxt, yyt = xt, yt
 
         # -- pcolormesh
@@ -1075,7 +1092,7 @@ class XYZ(object):
 
             im1 = ax.pcolormesh(
                 xxt, yyt, self.G, vmin=vmin, vmax=vmax, rasterized=True,
-                shading='flat', cmap=cmap)
+                shading='flat', cmap=cmap, zorder=zorder + 1)
 
         # -- invalid plt_type
         else:
@@ -1122,9 +1139,14 @@ class XYZ(object):
                         sg.skewness, s.skewness, nobs, s.nobs)
 
             style = dict(
-                family='monospace', fontsize='small', color='b',
-                verticalalignment='top', bbox=dict(
-                    boxstyle='square,pad=0', fc=(1, 1, 1, 0.9), ec='none'))
+                bbox=dict(
+                    boxstyle='square,pad=0', ec='none', fc=(1, 1, 1, 0.9)
+                ),
+                color='b',
+                family='monospace',
+                fontsize='small',
+                verticalalignment='top',
+            )
 
             if use_cartopy:
                 ax.text(0.01, 0.99, stat_str, transform=ax.transAxes,
@@ -1135,7 +1157,8 @@ class XYZ(object):
 
         if cbaron:
             if Basemap is None or use_cartopy is True:
-                cb_ax = fig.add_axes([0, 0, 0.1, .1])
+                # - Cartopy
+                cb_ax = fig.add_axes([0, 0, .1, .1])  # (x0, y0, wide, high)
                 def_cb_pad = ['7%', '5%'][cbloc in ('left', 'right')]
                 cbpad = kw.get('cb_pad', def_cb_pad)
                 fig.canvas.mpl_connect(
@@ -1146,6 +1169,7 @@ class XYZ(object):
                     im1, orientation=orient, cax=cb_ax, format='%g',
                     extend=cbextend)
             else:
+                # - Basemap
                 cb = ax.colorbar(
                     im1, location=cbloc, size=cbsz, pad=cbpad, format='%g',
                     extend=cbextend)
