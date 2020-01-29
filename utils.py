@@ -625,12 +625,15 @@ class XYZ(object):
         gtfamily : str, optional
             gridline text family (default 'monospace').
         gtextsize : number, optional
-            gridline text size (default 7).
+            gridline text size (default 8).
         globe : bool, optional
             set map extent to global extent (180W:180E, 90S:90N) (default
             False). This keyword overrides limit values.
         gspacing : (number, number), optional
             spacing between grid lines (default (30, 30)).
+        gzorder : number, optional
+            zorder of gridlines (default 2).  Increase value for visibility
+            over other masks/data.
 
         limit : [[float,float],[float,float]], optional
             output map extent geographic values [[lon0,lon1], [lat0,lat1]]
@@ -726,6 +729,7 @@ class XYZ(object):
         fight = kw.get('figheight', self.figheight)
         gcol = kw.get('gcol', 'gray')
         gline = kw.get('gline', (None, None))
+        gzorder = kw.get('gzorder', 2)
         gtc = kw.get('gtextcolor', '#333333')
         gtf = kw.get('gtfamily', 'monospace')
         gts = kw.get('gtextsize', 8)
@@ -831,7 +835,8 @@ class XYZ(object):
             gl_kw = {
                 'linestyle': '-', 'color': gcol, 'alpha': 0.5,
                 'xlocs': self._get_lonts(gspacing[0]),
-                'ylocs': self._get_latts(gspacing[1])
+                'ylocs': self._get_latts(gspacing[1]),
+                'zorder': gzorder,
             }
             if mres in ('h', '10m'):
                 mres = '10m'
@@ -893,6 +898,7 @@ class XYZ(object):
                 'color': gcol,
                 'linewidth': 0.2,
                 'dashes': gline,
+                'zorder': gzorder,
             }
             valid_proj = (
                 'cyl', 'laea', 'lcc', 'merc', 'mill', 'moll', 'robin', 'sinu',
@@ -1988,6 +1994,7 @@ def resize_cbar_function(ax, cax, location='bottom', pad='10%', size='4%'):
         cax.set_position(cax_pos)
 
     resize_colorbar(None)
+    plt.sca(ax)
     return resize_colorbar
 
 
