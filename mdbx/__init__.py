@@ -39,7 +39,7 @@ class Query(object):
         This can be used to specify a user-supplied data dictionary to be
         used for retrievals. Some specific subtypes and most data on test
         server use the following format
-        '\"/var/moods/tests/``subtype``/retrieval_table\"'
+        '\"/path/to/tests/``subtype``/retrieval_table\"'
     elements : str or list of str or tuple of tuple
         Elements or observation fields to retrieve. Default datetime and
         coordinates from class static variables are automatically added - these
@@ -103,7 +103,7 @@ class Query(object):
     >>> req = mdbx.Query(
             'SATAOD', 'AOD_NM550',
             start='20150807/0300Z', stop='20150807/0600Z',
-            ddict='\"/var/moods/tests/SATAOD/retrieval_table\"',
+            ddict='\"/path/to/tests/SATAOD/retrieval_table\"',
             hostname='mdb-test')
 
     # a. get requested records as a numpy ndarray

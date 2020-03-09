@@ -167,7 +167,7 @@ class Integer(object):
         1
         """
         mask = 1 << offset
-        if mask_type is 'bool':
+        if mask_type == 'bool':
             return(self.int_type & mask != 0)
         elif mask_type in ('int', 'bin'):
             return(self.int_type & mask != 0) * 1
@@ -1071,8 +1071,8 @@ class XYZ(object):
                 xt, yt = transform_basemap_coord(self.x, self.y, ax)
             im1 = ax.scatter(
                 xt, yt, c=s_color, marker=s_marker, s=s_ms, lw=s_lw,
-                # rasterized=True, linewidth=0,
-                vmin=vmin, vmax=vmax, cmap=cmap, zorder=zorder + 1)
+                vmin=vmin, vmax=vmax, cmap=cmap, zorder=zorder + 1
+            )
             xxt, yyt = xt, yt
 
         # -- pcolormesh
@@ -1974,19 +1974,19 @@ def resize_cbar_function(ax, cax, location='bottom', pad='10%', size='4%'):
         # the correct location from get_position.
         plt.draw()
         pos = ax.get_position()
-        if location is 'bottom':
+        if location == 'bottom':
             cax_pos = [
                 pos.xmin, pos.ymin - (pct2num(pad) + pct2num(size) / 1.5),
                 pos.width, pct2num(size) / 1.5]
-        if location is 'top':
+        if location == 'top':
             cax_pos = [
                 pos.xmin, pos.ymax + (pct2num(pad)),
                 pos.width, pct2num(size) / 1.5]
-        elif location is 'left':
+        elif location == 'left':
             cax_pos = [
                 pos.xmin - pct2num(pad), pos.ymin,
                 pct2num(size) / 1.5, pos.height]
-        elif location is 'right':
+        elif location == 'right':
             cax_pos = [
                 pos.xmin + pos.width + pct2num(pad), pos.ymin,
                 pct2num(size) / 1.5, pos.height]

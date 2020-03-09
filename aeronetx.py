@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 """
@@ -10,10 +9,17 @@ import os
 import linecache
 import tempfile
 import requests
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from datetime import datetime, timedelta
 import pandas as pd
-from HTMLParser import HTMLParser
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    from html.parser import HTMLParser
+
 __version__ = "2017.01.1"
 __author__ = "Yaswant Pradhan"
 
@@ -81,13 +87,15 @@ def parse_v3_site(site, url=None):
     if site in list(df.Site_Name):
         return True, df
     else:
-        print("'{}' not found in AERONET Database Site List".format(site))
+        if site is None or site == 'None':
+            pass
+        else:
+            print("'{}' not found in AERONET Database Site List".format(site))
         return False, df
 
 
 def show_v3_site():
-    """Display AERONET locations on map.
-    """
+    """Display AERONET locations on map."""
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from mpl_toolkits.basemap import Basemap

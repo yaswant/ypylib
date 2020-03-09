@@ -1,5 +1,6 @@
 """Demonstration of direct plotting of from MetDB using mdbx"""
-import mdbx
+import os
+from ypylib import mdbx
 
 
 def plot_sataod(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
@@ -16,18 +17,16 @@ def plot_sataod_test(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
     """Plot MODIS AOD from mdb-test server."""
     q = mdbx.Query('SATAOD', [ELEMENT, 'STLT_IDNY'], area=AREA,
                    start=START, stop=STOP,
-                   ddict='\"/var/moods/tests/SATAOD/retrieval_table\"',
+                   ddict='\"/path/to/tests/SATAOD/retrieval_table\"',  # update
                    hostname='mdb-test',
                    constrain=constrain, keep=True)
     return q.plot(ELEMENT, **kw)
 
 
-# On-demand custom plots
 def plot_sataod_arabian_peninsula():
-    """Plot SATAOD over the Arabian Penisula"""
+    """Plot SATAOD over the Arabian Peninsula."""
     from ypylib.utils import seqdate, log
-    from ImageMetaTag import savefig
-    save_dir = '/scratch/fra6/dust/20150820-20150920'
+    save_dir = os.path.expandvars('$SCRATCH') + '/dust/20150820-20150920'
     for date in seqdate('2015-08-20', '2015-09-20',
                         in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
         log.info(date)
@@ -42,14 +41,12 @@ def plot_sataod_arabian_peninsula():
             drawcountries=True,
             title='MODIS aerosol optical depth (DT+DB): ' + date,
             cb_on=True, cb_title='AOD at 550nm []')
-        # plt.savefig('/'.join([save_dir, 'SATAOD_' + date + '.png']))
-        savefig('/'.join([save_dir, 'SATAOD_' + date + '.png']),
-                img_converter=1)
+        plt.savefig('/'.join([save_dir, 'SATAOD_' + date + '.png']))
         plt.close()
 
 
 def plot_msgradfd_geo():
-    """Example: MSG Cloud Top Temperature Full Disc"""
+    """MSG Cloud Top Temperature Full Disc."""
     import cartopy.crs as ccrs
     SUBTYPE = 'MSGRADFD'
     ELEMENT = 'CLOD_TOP_TMPR'
@@ -61,14 +58,13 @@ def plot_msgradfd_geo():
 
     return req.plot(
         ELEMENT, use_cartopy=True,
-        # projection=ccrs.Geostationary(satellite_height=35786000),
         projection=ccrs.Geostationary(),
         delta=(.5, .5),
         globe=True, cb_on=True,)
 
 
 def plot_sataod_india_dust():
-    """Example: SATAOD India dust case"""
+    """SATAOD India dust case"""
     plt = plot_sataod(  # use_cartopy=True, map_res='h',
         AREA=['40N', '15N', '60E', '90E'],
         START='20180502/0000Z', STOP='20180502/2359Z',
@@ -81,7 +77,7 @@ def plot_sataod_india_dust():
         gspacing=(10, 10),
         cb_on=True, cb_title='Aerosol Optical Depth at 550nm')
 
-    # Add location markers:
+    # -- Add location markers
     locs = {
         'Delhi': {'lat': 28.7041, 'lon': 77.1025},
         'Agra': {'lat': 27.1767, 'lon': 78.0081},
@@ -99,7 +95,7 @@ def plot_sataod_india_dust():
 
 
 def plot_crete_dust():
-    """Example: SATAOD Crete Dust"""
+    """SATAOD Crete dust case."""
     date = '20180325'
     plt = plot_sataod(
         AREA=['42N', '25N', '12E', '35E'],
@@ -112,12 +108,11 @@ def plot_crete_dust():
         gspacing=(5, 5),
         title='MODIS Aqua+Terra aerosol optical depth (DT+DB) on ' + date,
         cb_on=True, cb_title='AOD at 550nm []')
-    # plt.savefig(os.path.expandvars('/$HOME/MODISAOD_Crete_' + date + '.png'))
     return plt
 
 
 def plot_wow_air_temp():
-    """Example: Plot WOW surface air temperature"""
+    """Plot WOW surface air temperature."""
     SUBTYPE = 'WOW'
     ELEMENTS = 'SRFC_AIR_TMPR'
     AREA = ['63N', '49N', '12W', '4E']
@@ -132,7 +127,7 @@ def plot_wow_air_temp():
 
 
 def plot_ascat_mergde_model_field():
-    """Example: Plot merged model data in ASCAT subtype"""
+    """Plot merged model data in ASCAT subtype."""
     SUBTYPE = 'ASCAT'
     MERGED_FIELD = 'MODL_SRFC_HGHT'
     AREA = ['63N', '49N', '12W', '4E']
@@ -173,7 +168,7 @@ def plot_ascat_mergde_model_field():
 def plot_argo(subtype='ARGOB', elements=(('SALNY',), 100), platform='029',
               start='20180121/0000Z', stop='20180121/1559Z'):
     """
-    Extrtact salinity profiles from ARGO bouy observation netwwork data
+    Extract salinity profiles from ARGO buoy observation network data
 
     Parameters
     ----------
@@ -209,7 +204,7 @@ def plot_atdnet(subtype='ATDNET', elements='LGHN_STRK',
 
 
 def plot_snow_depth():
-    """ Plot Snow Depth show only 0 values."""
+    """Plot Snow Depth show only 0 values."""
 
     req = mdbx.Query(
         'LNDSYB', 'SNOW_DPTH', area=['90N', '20N', '20W', '80E'],
@@ -226,16 +221,96 @@ def plot_snow_depth():
     req.plot('SNOW_DPTH', cb_title='snow depth [m]', **plt_kw)
 
 
+def extract_giirs():
+    """
+    Define subtype/elements and extract GIIRS data from mdb-test.
+
+    GIIRS Radiance stored at 1650 channels
+    """
+    SUBTYPE = 'GIIRS'
+    ELEMENTS = ['LNGD_LW', 'LTTD_LW', (('CHNL_RDNC',), 1650)]
+    AREA = ['90N', '90S', '180W', '180E']
+    START, STOP = '20200130/0500Z', '20200130/0959Z'
+
+    # GIIRS entries are not in subtype definition, so update manually
+    GIIRS_dict = {
+        'GIIRS': {
+            'BAND_TYPE': 'i4',  # band (set to missing)
+            'BAND_TYPE_LW': 'i4',  # band (2=LW)
+            'BAND_TYPE_MW': 'i2',  # band (3=MW)
+            'CHNL_END_LW': 'f4',  # endChannel
+            'CHNL_END_MW': 'f4',  # endChannel
+            'CHNL_NMBR': 'i4',  # channelNumber
+            'CHNL_RDNC': 'f4',
+            'CHNL_RDNC_NSE': 'f4',  # channelRadiance (use for noise, NEdR)
+            'CHNL_RPLTN_CONT': 'i4',  # extndDelayedDescriptorReplicationFactor
+            'CHNL_STRT_LW': 'f4',  # startChannel
+            'CHNL_STRT_MW': 'f4',  # startChannel
+            # confidenceFlag (dataset "QF_LWElementExploration").
+            # 0=valid, 1=invalid, 15=missing
+            'CNFC_FLAG_LW': 'i4',
+            # confidenceFlag (dataset "QF_MWElementExploration").
+            # 0=valid, 1=invalid, 15=missing
+            'CNFC_FLAG_MW': 'i4',
+            'DAY': 'f4',
+            'FOR_NMBR': 'f4',  # fieldOfRegardNumber (attribute "Dwell number")
+            'FOV_NMBR': 'i4',
+            'HOUR': 'i4',
+            # l1ProcessingFlag (attribute "Data Quality"). 0=OK, 1=not OK
+            'L1_PRCSG_FLAG': 'i2',
+            'LNGD': 'f4',
+            'LNGD_LW': 'f4',
+            'LNGD_MW': 'f4',
+            'LTTD': 'f4',
+            'LTTD_LW': 'f4',
+            'LTTD_MW': 'f4',
+            'MINT': 'i4',
+            'MNTH': 'i4',
+            'ORGNG_GNRTG_CNTR': 'S20',  # centre (CCT C-1)
+            'ORGNG_GNRTG_CNTR2': 'S20',  # subCentre (CCT C-12)
+            'RAD_FLGS': 'i4',  # radianceTypeFlags (4=apodized, 5=unapodized)
+            'RCPT_DAY': 'i4',
+            'RCPT_HOUR': 'i4',
+            'RCPT_MINT': 'i4',
+            'RCPT_MNTH': 'i4',
+            'RCPT_YEAR': 'i4',
+            'SCAN_LINE_NMBR': 'i4',
+            'SCND': 'i4',
+            'SOLR_AZMH_LW': 'f4',  # solarAzimuth
+            'SOLR_AZMH_MW': 'f4',  # solarAzimuth
+            'SOLR_ZNTH_ANGL_LW': 'f4',  # solarZenithAngle
+            'SOLR_ZNTH_ANGL_MW': 'f4',  # solarZenithAngle
+            'STLT_AZMH_LW': 'f4',  # bearingOrAzimuth
+            'STLT_AZMH_MW': 'f4',  # bearingOrAzimuth
+            'STLT_CLAS': 'i4',  # satelliteClassification (383=FY-4)
+            'STLT_IDNY': 'i4',
+            'STLT_INST': 'i4',  # satelliteInstruments (962=GIIRS, CCT C-8)
+            'STLT_ZNTH_ANGL_LW': 'f4',  # satelliteZenithAngle
+            'STLT_ZNTH_ANGL_MW': 'f4',  # satelliteZenithAngle
+            # heightOfStation (m, to nearest 100m, geostationary height range)
+            'STTN_HGHT': 'f4',
+            'WAVE_NMBR_END_LW': 'f4',  # waveNumber (end)
+            'WAVE_NMBR_END_MW': 'f4',  # waveNumber (end)
+            'WAVE_NMBR_STRT_LW': 'f4',  # waveNumber (start)
+            'WAVE_NMBR_STRT_MW': 'f4',  # waveNumber (start)
+            'YEAR': 'i4',
+        }
+    }
+    mdbx.subtypes.DTYPE_MAPS.update(GIIRS_dict)
+
+    # -- Create a Query instance (update actual ddict path)
+    req = mdbx.Query(
+        SUBTYPE, ELEMENTS, area=AREA, start=START, stop=STOP,
+        ddict='\"/path/to/tests/GIIRS/tables/retrieval_table_GIIRS\"',
+        hostname='mdb-test'
+    )
+
+    data = req.extract(fix_unknown=True)
+    return data
+
 # req = Query('MWHS', 'STLT_IDNY', start='20190621/1300Z')
 # print(req.extract())
 
-# ex_atdnet(start='TODAY-1/0000Z', stop='TODAY/0000Z')
-# ex_argo()
-# ex_ascat_mergde_model_field()
-# ex_wow_air_temp().show()
-# ex_sataod_india_dust().show()
-# ex_crete_dust().show()
-# ex_plot_msgradfd_geo().show()
 
 # sataod: 783 (Terra), 784 (Aqua)
 # data from test server
@@ -311,5 +386,14 @@ def plot_snow_depth():
 # #          # plt_type='contour',
 # #          cb_on=True).show()
 
+
 if __name__ == "__main__":
+    # plot_atdnet(start='TODAY-1/0000Z', stop='TODAY/0000Z')
+    # plot_argo()
+    # plot_ascat_mergde_model_field()
+    # plot_wow_air_temp().show()
+    # plot_sataod_india_dust().show()
+    # plot_crete_dust().show()
+    # plot_msgradfd_geo().show()
+
     pass

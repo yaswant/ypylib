@@ -35,8 +35,10 @@ plt = xyz.mapdata(
     projection=ccrs.Robinson(),  # use cartopy Robinson projection
     # show_datapoints=True,  # show original data point locations
     # show_gridpoints=True,  # show grid points of gridded data
-    describe_data=True)  # show basic stats from original data
+    describe_data=True  # show basic stats from original data
+)
 plt.show()
+
 
 # 2b. Same as above, but using basemap. ---------------------------------------
 # Note: There is a slight discrepancy here that the map limit is not respected
@@ -54,5 +56,6 @@ plt = xyz.mapdata(
     gspacing=(45, 45),  # gridline spacing
     # show_datapoints=True,
     # show_gridpoints=True,
-    describe_data=True)
+    describe_data=True
+)
 plt.show()

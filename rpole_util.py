@@ -8,6 +8,8 @@ rotated pole grid
 # author: Yaswant Pradhan
 # date: 2018-06-11
 
+from __future__ import print_function
+import os
 import iris
 import numpy as np
 import matplotlib.pyplot as plt
@@ -204,15 +206,15 @@ def rotpol2regular(rot_cube, nearest=False,
     # TODO: Remove derived coordinate altitude from cube or add orography cube
     # to the cube
     #
-    # print dir(rot_cube.derived_coords[0])
+    # print(dir(rot_cube.derived_coords[0]))
     # rot_cube.remove_coord('altitude')
     # rot_cube.remove_aux_factory(rot_cube.derived_coords[0])
     # rot_cube.remove_aux_factory(rot_cube.aux_factories[0])
 
     reg_cube = rot_cube.regrid(reg_cube, scheme)
 
-    print 'ROT CUBE: ', rot_cube
-    print 'REG CUBE: ', reg_cube
+    print('ROT CUBE: ', rot_cube)
+    print('REG CUBE: ', reg_cube)
 
     # Re-grid cube with specific scheme
     return reg_cube
@@ -225,11 +227,14 @@ def demo_cube_conversion():
     # -------------------------------------------------------------------------
 
     # Read a sample UKV surface air temperature data in rotated pole grid
-    pp_file = '/scratch/fra6/test/UKV_OP_03_20180528.pp'
+    pp_file = os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528.pp')
     rot_cube = iris.load_cube(pp_file)
 
-    iris.save(rot_cube, '/scratch/fra6/test/UKV_OP_03_20180528_rot.nc',
-              zlib=True)
+    iris.save(
+        rot_cube,
+        os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528_rot.nc'),
+        zlib=True
+    )
 
     coastlines_kw = dict(resolution='10m', linewidth=0.5)
 
@@ -248,8 +253,11 @@ def demo_cube_conversion():
     rlon_lim, rlat_lim = coord_reg2rot([-6, 2], [50, 55])
     sub_rot_cube = rot_cube.intersection(
         grid_longitude=rlon_lim, grid_latitude=rlat_lim)
-    iris.save(sub_rot_cube,
-              '/scratch/fra6/test/UKV_OP_03_20180528_sub_rot.nc', zlib=True)
+    iris.save(
+        sub_rot_cube,
+        os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528_sub_rot.nc'),
+        zlib=True
+    )
 
     qplt.pcolormesh(sub_rot_cube)
     plt.gca().coastlines(**coastlines_kw)
@@ -259,8 +267,11 @@ def demo_cube_conversion():
     # Example 2: Convert the rotated-pole cube to regular cube (full domain)
     # -------------------------------------------------------------------------
     reg_cube = rotpol2regular(rot_cube)
-    iris.save(reg_cube,
-              '/scratch/fra6/test/UKV_OP_03_20180528_reg.nc', zlib=True)
+    iris.save(
+        reg_cube,
+        os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528_reg.nc'),
+        zlib=True
+    )
 
     qplt.pcolormesh(reg_cube)
     plt.gca().coastlines(**coastlines_kw)
@@ -272,8 +283,11 @@ def demo_cube_conversion():
     # -------------------------------------------------------------------------
     sub_reg_cube = rotpol2regular(
         rot_cube, latlim=[50, 55], lonlim=[-6, 2], nlat=320, nlon=512)
-    iris.save(sub_reg_cube,
-              '/scratch/fra6/test/UKV_OP_03_20180528_sub_reg.nc', zlib=True)
+    iris.save(
+        sub_reg_cube,
+        os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528_sub_reg.nc'),
+        zlib=True
+    )
 
     qplt.pcolormesh(sub_reg_cube)
     plt.gca().coastlines(**coastlines_kw)
@@ -285,8 +299,11 @@ def demo_cube_conversion():
     # -------------------------------------------------------------------------
     sub_reg_cube = rotpol2regular(
         rot_cube, latlim=[48, 61], lonlim=[-14, 6], nlat=260, nlon=400)
-    iris.save(sub_reg_cube,
-              '/scratch/fra6/test/UKV_OP_03_20180528_sup_reg.nc', zlib=True)
+    iris.save(
+        sub_reg_cube,
+        os.path.expandvars('$SCRATCH/test/UKV_OP_03_20180528_sup_reg.nc'),
+        zlib=True
+    )
 
     qplt.pcolormesh(sub_reg_cube)
     plt.gca().coastlines(**coastlines_kw)
@@ -296,40 +313,44 @@ def demo_cube_conversion():
 
 if __name__ == '__main__':
     # demo_cube_conversion()
-    pp_file = '/scratch/fra6/test/20180607T0300Z.pp'
+    pp_file = os.path.expandvars('$SCRATCH/test/20180607T0300Z.pp')
     cube = iris.load(pp_file)
-    # print cube
+    # print(cube)
 
     reg_cub = []
     if type(cube) is iris.cube.CubeList:
         for cub in cube:
-            print cub.name()
-            print cub
-            iris.save(rotpol2regular(cub),
-                      '/scratch/fra6/test/' + cub.name() + '.nc',
-                      zlib=True)
+            print(cub.name())
+            print(cub)
+            iris.save(
+                rotpol2regular(cub),
+                os.path.expandvars('$SCRATCH/test/') + cub.name() + '.nc',
+                zlib=True)
             # reg_cub.append(rotpol2regular(cub))
             # reg_cub.append(rotpol2regular(
-            #     cub, latlim=(50, 55), lonlim=(-6, 2), nlat=333, nlon=533))
+            #     cub, latlim=(50, 55), lonlim=(-6, 2), nlat=333, nlon=533)
+            # )
 
-    # print iris.cube.CubeList(reg_cub)
+    # print(iris.cube.CubeList(reg_cub))
 
-    # iris.save(reg_cub, '/scratch/fra6/test/UKV_OP_03_20180528_sub_rot.nc',
+    # iris.save(reg_cub, '$SCRATCH/test/UKV_OP_03_20180528_sub_rot.nc',
     #           zlib=True)
 
-    # reg_cube = reg_cube_template(latlim=(50, 55), lonlim=(-6, 2),
-    #                              nlev=70, nlat=333, nlon=533)
+    # reg_cube = reg_cube_template(
+    #     latlim=(50, 55), lonlim=(-6, 2), nlev=70, nlat=333, nlon=533
+    # )
     # scheme = iris.analysis.Linear(extrapolation_mode='mask')
     # out = cube[2].regrid(reg_cube, scheme)
-    # iris.save(out,
-    #           '/scratch/fra6/test/20180607T0300Z_3d.nc', zlib=True)
+    # iris.save(out, '$SCRATCH/test/20180607T0300Z_3d.nc', zlib=True)
 
     # rlon_lim, rlat_lim = coord_reg2rot([-6, 2], [50, 55])
     # sub_rot_cube = cube_list[0].intersection(
-    #     grid_longitude=rlon_lim, grid_latitude=rlat_lim)
-    # # iris.save(sub_rot_cube,
-    # #           '/scratch/fra6/test/UKV_OP_03_20180528_sub_rot.nc',
-    # zlib=True)
+    #     grid_longitude=rlon_lim, grid_latitude=rlat_lim
+    # )
+    # iris.save(
+    #     sub_rot_cube,
+    #     '$SCRATCH/test/UKV_OP_03_20180528_sub_rot.nc', zlib=True
+    # )
 
     # qplt.pcolormesh(sub_rot_cube)
     # # plt.gca().coastlines(**coastlines_kw)
