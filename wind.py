@@ -66,3 +66,23 @@ class ScalarWind(object):
             c_drag[high] = (0.06 + (0.07 / spd[high])) * 1e-3
 
         return c_drag
+
+    def divergence_cfd(self, latitude, longitude):
+        # TODO: compute divergence via centred finite difference
+
+        # div = Dv/Dy + Du/Dx -(v/a)*tan(phi)
+
+        # div(j,i) = (v(j+1,i)-v(j-1,i))/dy2(j)
+        #       + (u(j,i+1)-u(j,i-1))/dx2(j)
+        #       - (v(j,i)/a)*tan(phi(j))
+        pass
+
+    def vorticity_cdf(self, latitude, longitude):
+        # TODO: compute vorticity via centred finite difference
+
+        # vor = Dv/Dx - Du/Dy + (u/a)*tan(phi)
+
+        # vor(j,i) = (v(j,i+1)-v(j,i-1))/dx2(j)
+        #       - (u(j+1,i)-u(j-1,i))/dy2(j)
+        #       + (u(j,i)/a)*tan(phi(j))
+        pass

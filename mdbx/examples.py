@@ -12,6 +12,85 @@ def plot_sataod(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
     return q.plot(ELEMENT, **kw)
 
 
+def plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-07'):
+    """Plot accumulated (from 31-March) AOD difference between 2020 and 2019.
+
+    Parameters
+    ----------
+    mmmdd : str, optional
+        mmm-dd to accumulate AOD from baseline date (Mar-31) of respective year
+    """
+    # India lock-down started on 2020-03-24
+    from ypylib.utils import XYZ
+    import numpy as np
+    from datetime import datetime
+    # import cartopy.crs as ccrs
+
+    stopd = datetime.strptime(mmmdd, '%b-%d').strftime('%m%d')
+    pngfile = os.path.expandvars('$HOME/MODIS_diff_India_' + mmmdd + '.png')
+    kw = dict(
+        area=['38N', '5N', '60E', '99E'],
+        start=year_ref + '0331/0000Z', stop=year_ref + stopd + '/2359Z',
+        # constrain={'STLT_IDNY': 784},  # aqua: 784, terra: 783
+    )
+    plt_kw = dict(
+        # projection=ccrs.Robinson(),
+        cb_extend='both',
+        cmap='seismic',
+        delta=(0.25, 0.25),
+        drawcountries=True,
+        drawstates_ind=True,
+        fillcontinents=True,
+        gspacing=(10, 10),
+        gzorder=3,
+        limit=[[60, 99], [5, 38]],
+        mask_ocean=True,
+        vmax=0.2,
+        vmin=-0.2,
+        # plt_type='contour',  delta=(0.5, 0.5),
+        # c_levels=[-1, -0.5, -0.2, -0.1, 0, 0.1, 0.2, 0.5, 1]
+    )
+    q1 = mdbx.Query('SATAOD', 'AOD_NM550', **kw)
+    data = q1.extract()
+    gd1, xc, yc = XYZ(data['LNGD'], data['LTTD'], data['AOD_NM550']).griddata(
+        limit=plt_kw['limit'], delta=plt_kw['delta'], order=True
+    )
+
+    kw.update({'start': '20200331/0000Z', 'stop': '2020' + stopd + '/2359Z'})
+    q2 = mdbx.Query('SATAOD', 'AOD_NM550', **kw)
+    data = q2.extract()
+    gd2, xc, yc = XYZ(data['LNGD'], data['LTTD'], data['AOD_NM550']).griddata(
+        limit=plt_kw['limit'], delta=plt_kw['delta'], order=True
+    )
+
+    diff = gd2.data - gd1.data
+    xx, yy = np.meshgrid(xc, yc)
+    plt = XYZ(xx.ravel(), yy.ravel(), diff.ravel()).mapdata(
+        cb_title='{} (2020-{})'.format(r'$\Delta \tau_{550}$', year_ref),
+        **plt_kw
+    )
+
+    # -- title
+    plt.suptitle(
+        'Change in AOD over the Indian subcontinent '
+        'during Covid-19 lockdown'
+    )
+    plt.title('Data source: MODIS Terra & Aqua; Period: 31 March to ' +
+              datetime.strptime(mmmdd, '%b-%d').strftime('%d %b'))
+    # -- credit
+    plt.text(
+        99.5, 5.5, 'Credit: Met Office|NASA', color='#555555',
+        rotation='vertical', family='monospace', va='bottom'
+    )
+    # -- add logo
+    logo = plt.imread(os.path.expandvars(
+        '$HOME/bin/MO_SQUARE_black_mono_for_light_backg_RBG.png'
+    ))
+    plt.imshow(logo, extent=(60, 69, 5, 13), zorder=3, alpha=1)
+    plt.savefig(pngfile)
+    # plt.show()
+
+
 def plot_sataod_test(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
                      constrain=None, **kw):
     """Plot MODIS AOD from mdb-test server."""
@@ -26,7 +105,7 @@ def plot_sataod_test(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
 def plot_sataod_arabian_peninsula():
     """Plot SATAOD over the Arabian Peninsula."""
     from ypylib.utils import seqdate, log
-    save_dir = os.path.expandvars('$SCRATCH') + '/dust/20150820-20150920'
+    save_dir = os.path.expandvars('$SCRATCH/dust/20150820-20150920')
     for date in seqdate('2015-08-20', '2015-09-20',
                         in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
         log.info(date)
@@ -396,4 +475,9 @@ if __name__ == "__main__":
     # plot_crete_dust().show()
     # plot_msgradfd_geo().show()
 
+    # for d in ('Apr-02', 'Apr-03', 'Apr-04', 'Apr-05', 'Apr-06',
+    #           'Apr-07', 'Apr-08'):
+    #     plot_sataod_india_covid19(mmmdd=d)
+
+    plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
     pass

@@ -599,6 +599,10 @@ class XYZ(object):
             un-gridded data
         drawcountries : bool, optional
             draw country boundaries (default False).
+        drawstates : bool, optional
+            draw USA state administrative boundaries (default False).
+        drawstates_ind : bool, optional
+            draw India state administrative boundaries (default False).
         figsize : (number, number), optional
             output figure size (default auto adjusted with a base height of 5).
         figheight : number, optional
@@ -725,6 +729,7 @@ class XYZ(object):
         delta = kw.get('delta', self.delta)
         drawcountries = kw.get('drawcountries', False)
         drawstates = kw.get('drawstates', False)
+        drawstates_ind = kw.get('drawstates_ind', False)
         figsize = kw.get('figsize', self.figsize)
         fight = kw.get('figheight', self.figheight)
         gcol = kw.get('gcol', 'gray')
@@ -868,6 +873,24 @@ class XYZ(object):
                     scale='10m', linewidth=0.4,
                     facecolor='none', edgecolor='k', alpha=0.5)
                 ax.add_feature(states_provinces)
+
+            if drawstates_ind:
+                # add Indian states
+                import cartopy.io.shapereader as shpreader
+                adm_1 = os.path.expandvars(
+                    '$HOME/.local/share/cartopy/shapefiles/gadm/cultural/'
+                    'gadm36_IND_1.shp'
+                )
+                adm1_shapes = list(shpreader.Reader(adm_1).geometries())
+                ax.add_geometries(
+                    adm1_shapes, cartopy.crs.PlateCarree(),
+                    edgecolor='k',
+                    linewidth=0.5,
+                    linestyle='dotted',
+                    facecolor='none',
+                    # alpha=0.5,
+                    zorder=3,
+                )
 
             # add continent, coastline
             if fillcontinents:
@@ -1123,7 +1146,7 @@ class XYZ(object):
                 ax.scatter(xxt, yyt, **sckw)
 
         if describe_data:
-            s = describe(self.z)
+            s = describe(self.z, nan_policy='omit')
             if plotype == 'scatter':
                 stat_str = (
                     'min:{:.4g}|max:{:.4g}|avg:{:.4g}\n'
