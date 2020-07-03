@@ -67,17 +67,26 @@ class ScalarWind(object):
 
         return c_drag
 
-    def divergence_cfd(self, latitude, longitude):
+    def divergence_cfd(self, dx=1, dy=1):
         # TODO: compute divergence via centred finite difference
 
         # div = Dv/Dy + Du/Dx -(v/a)*tan(phi)
-
         # div(j,i) = (v(j+1,i)-v(j-1,i))/dy2(j)
         #       + (u(j,i+1)-u(j,i-1))/dx2(j)
         #       - (v(j,i)/a)*tan(phi(j))
+
+        # compare against metpy
+        # from metpy import calc
+        # from metpy.units import units
+        # print(calc.kinematics.divergence(u, v, 1 * units.m, 1 * units.m))
+
+        dudx = np.gradient(self.u, dx, axis=1)
+        dvdy = np.gradient(self.v, dy, axis=0)
+        return dudx + dvdy
+
         pass
 
-    def vorticity_cdf(self, latitude, longitude):
+    def vorticity_cdf(self, dx, dy):
         # TODO: compute vorticity via centred finite difference
 
         # vor = Dv/Dx - Du/Dy + (u/a)*tan(phi)
@@ -86,3 +95,20 @@ class ScalarWind(object):
         #       - (u(j+1,i)-u(j-1,i))/dy2(j)
         #       + (u(j,i)/a)*tan(phi(j))
         pass
+
+
+def divergence(u, v, dx=1, dy=1):
+    dudx = np.gradient(u, dx, axis=1)
+    dvdy = np.gradient(v, dy, axis=0)
+    print(u, v)
+    return dudx + dvdy
+
+
+if __name__ == "__main__":
+
+    u = np.array([[1, 2, 6], [3, 4, 5], [3, 4, 5]])
+    v = np.array([[4, 5, 7], [1, 4, 5], [3, 4, 5]])
+
+    print(divergence(u, v, 1, 1))
+    # print(divergence(u, v, 0.5))
+

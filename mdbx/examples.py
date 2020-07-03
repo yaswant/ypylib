@@ -387,6 +387,19 @@ def extract_giirs():
     data = req.extract(fix_unknown=True)
     return data
 
+
+def plot_viirs_aod():
+    q = mdbx.Query(
+        'SATAOD', ['AOD_NM550', 'STLT_IDNY'],
+        # area=AREA, # ['63N', '49N', '12W', '4E']
+        start='20200210/0000Z',
+        stop='20200210/2359Z',
+        ddict='\"/path/to/tests/SATAOD/rtable_viirs\"',
+        hostname='mdb-test',
+        constrain={'STLT_IDNY': 224}
+    )
+    q.plot('AOD_NM550', use_cartopy=False, show=True)
+
 # req = Query('MWHS', 'STLT_IDNY', start='20190621/1300Z')
 # print(req.extract())
 
@@ -479,5 +492,6 @@ if __name__ == "__main__":
     #           'Apr-07', 'Apr-08'):
     #     plot_sataod_india_covid19(mmmdd=d)
 
-    plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
+    # plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
+
     pass
