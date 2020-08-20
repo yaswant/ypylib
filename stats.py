@@ -12,6 +12,31 @@ from scipy.ndimage.filters import uniform_filter1d
 # import matplotlib.pyplot as plt
 
 
+def ecdf(data):
+    """Empirical cumulative distribution function.
+
+    Map every data point in the dataset to a quantile, which is a number
+    between 0 and 1 that indicates the cumulative fraction of data points
+    smaller than that data point itself.
+
+    Interpretation:
+    median: drawn from 0.5 on y-axis
+
+
+    Parameters
+    ----------
+    data : array_like
+        point dataset
+
+    Returns
+    -------
+    tuple
+        Sorted data, and cumulative fraction of data points
+    """
+    x, y = np.sort(data), np.arange(1, len(data) + 1) / len(data)
+    return x, y
+
+
 def scale_range(input, min, max):
     """Scale an input array-like to a minimum and maximum number
     the input array must be of a floating point array
