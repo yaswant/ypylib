@@ -21,58 +21,19 @@ class Query(object):
 
     Attributes
     ----------
-    area : sequence of str, optional
-        Cut-out geographic Lat Lon extent (default None). The values in
-        area must follow North, South, West, East order and with N|S W|E
-        suffixes. For example, ['30N', '30S', '10W', '60E'] or
-        ('30N', '10N', '60E', '100E')
-    constrain : dict
-        Constrain extraction based on dict key/value. For example, to constrain
-        extraction for a Aqua MODIS (sat id 784), use
-        `constrain={'STLT_IDNY': 784}`
     contact : str
         User email address.
     data : numpy masked array
         Extracted data array when the query is executed via the `extract()`
         method.
-    ddict : str, optional
-        This can be used to specify a user-supplied data dictionary to be
-        used for retrievals. Some specific subtypes and most data on test
-        server use the following format
-        '\"/path/to/tests/``subtype``/retrieval_table\"'
-    elements : str or list of str or tuple of tuple
-        Elements or observation fields to retrieve. Default datetime and
-        coordinates from class static variables are automatically added - these
-        are ['YEAR', 'MNTH', 'DAY', 'HOUR', 'MINT', 'LTTD', 'LNGD']
     fmt : list
         Format specification for the default elements
-    hostname : str, optional
-        The hostname of the MetDB RPC server (default None which points to
-        'mdbapus-prod'). For retrievals from test storage areas use
-        'mdb-test' with unique ddict value.
-    keep : bool, optional
-        Setting this ``True`` will attach requested data to self.data for
-        further use by plot(), to_csv(), to_dump() methods without sending
-        duplicate requests to MetDB (default False).
-        Note that this option has no effect on extract() method which
-        always sends a new request to MetDB at each call.
     keywords : list
         Contains Start/Stop Time, Area, DDICT, MERGED data specifications.
     limit : list of list
         [[West, East], [North, South]] geographic limit based on area keyword.
     mdb_extract : bool
         Flag to indicate whether a mdb extract is required
-    merged : bool, optional
-        This is required to retrieve merged data.  Use only with subtypes
-        offering this option.
-    platform : str, optional
-        Specify Platform ID when required (e.g. for buoy data)
-    start, stop : str, optional
-        Cut-off start and stop times (default TODAY-1/0000Z, TODAY-1/0600Z).
-        The start and stop values accepts datetime in `%Y%m%d/%H%MZ` format.
-    subtype : str
-        MetDB subtype name. See
-        https://metnet2/content/metdb-subtypes-and-retrieval-details.
     user : str
         MetDB user id. Default is to read from environment variable.
 
@@ -178,10 +139,73 @@ class Query(object):
     def __init__(self, subtype, elements,
                  start=None, stop=None,
                  area=None, ddict=None,
-                 platform=None, over=None,
+                 platform=None, select=None, over=None,
                  merged=False, hostname=None,
                  keep=False, constrain=None):
+        """mdbx query instantiattion parameters.
 
+        Parameters
+        ----------
+        subtype : str
+            MetDB subtype name. See
+            https://metnet2/content/metdb-subtypes-and-retrieval-details.
+
+        elements : str or list of str or tuple of tuple
+            Elements or observation fields to retrieve. Default datetime and
+            coordinates from class static variables are automatically added -
+            these are ['YEAR', 'MNTH', 'DAY', 'HOUR', 'MINT', 'LTTD', 'LNGD']
+
+        start, stop : str, optional
+            Cut-off start and stop times (default TODAY-1/0000Z, TODAY-1/0600Z)
+            The start and stop values accepts datetime in `%Y%m%d/%H%MZ` format
+
+        area : sequence of str, optional
+            Cut-out geographic Lat Lon extent (default None). The values in
+            area must follow North, South, West, East order and with N|S W|E
+            suffixes. For example, ['30N', '30S', '10W', '60E'] or
+            ('30N', '10N', '60E', '100E')
+
+        ddict : str, optional
+            This can be used to specify a user-supplied data dictionary to be
+            used for retrievals. Some specific subtypes and most data on test
+            server use the following format
+            '\"/path/to/tests/``subtype``/retrieval_table\"'
+
+        platform : str, optional
+            Specify Platform ID when required (e.g. for buoy data)
+
+        select : str, optional
+            This keyword specifies which of the two products (channel groups)
+            to retrieve observations for, as follows:
+            "1" for 9 low-frequency channels (up to 89GHz);
+            "2" for 4 high-frequency channels (166 and 183GHz).
+            Use only with subtypes offering this option.
+
+        over : str, optional
+            This keyword can be used to select those observations over the
+            "land" or "sea".
+
+        merged : bool, optional
+            This is required to retrieve merged data. Use only with subtypes
+            offering this option.
+
+        hostname : str, optional
+            The hostname of the MetDB RPC server (default None which points to
+            'mdbapus-prod'). For retrievals from test storage areas use
+            'mdb-test' with unique ddict value.
+
+        keep : bool, optional
+            Setting this ``True`` will attach requested data to self.data for
+            further use by plot(), to_csv(), to_dump() methods without sending
+            duplicate requests to MetDB (default False).
+            Note that this option has no effect on extract() method which
+            always sends a new request to MetDB at each call.
+
+        constrain : dict
+            Constrain extraction based on dict key/value. For example, to
+            constrain extraction for Aqua MODIS (sat id 784), use
+            `constrain={'STLT_IDNY': 784}`
+        """
         self.subtype = subtype
         self.constrain = constrain
         self.start = [start, Query.start][start is None]
@@ -200,6 +224,8 @@ class Query(object):
             self.keywords += ['DATA MERGED']
         if platform:
             self.keywords += ['PLATFORM ' + platform]
+        if select:
+            self.keywords += ['SELECT ' + str(select)]
 
         # update elements list
         if isinstance(elements, str):
@@ -323,6 +349,8 @@ class Query(object):
     def to_txt(self, filename, delimiter=',', fmt=None):
         """Save data to a text file.
 
+        Limitation: Currently works with 1D arrays only.
+
         Preferred over to_csv() for speed and control.
 
         Parameters
@@ -363,6 +391,8 @@ class Query(object):
 
     def to_csv(self, filename):
         """Save data to comma separated value (csv) file.
+
+        Limitation: Currently works with 1D arrays only.
 
         Parameters
         ----------
