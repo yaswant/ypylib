@@ -137,12 +137,20 @@ class Query(object):
     stop = 'TODAY-1/0600Z'
 
     def __init__(self, subtype, elements,
-                 start=None, stop=None,
-                 area=None, ddict=None,
-                 platform=None, select=None, over=None,
-                 merged=False, hostname=None,
-                 keep=False, constrain=None):
-        """mdbx query instantiattion parameters.
+                 area=None,
+                 centre=None,
+                 constrain=None,
+                 ddict=None,
+                 hostname=None,
+                 keep=False,
+                 merged=False,
+                 over=None,
+                 platform=None,
+                 radius=None,
+                 select=None,
+                 start=None,
+                 stop=None):
+        """mdbx query instantiation parameters.
 
         Parameters
         ----------
@@ -155,39 +163,29 @@ class Query(object):
             coordinates from class static variables are automatically added -
             these are ['YEAR', 'MNTH', 'DAY', 'HOUR', 'MINT', 'LTTD', 'LNGD']
 
-        start, stop : str, optional
-            Cut-off start and stop times (default TODAY-1/0000Z, TODAY-1/0600Z)
-            The start and stop values accepts datetime in `%Y%m%d/%H%MZ` format
-
         area : sequence of str, optional
             Cut-out geographic Lat Lon extent (default None). The values in
             area must follow North, South, West, East order and with N|S W|E
             suffixes. For example, ['30N', '30S', '10W', '60E'] or
-            ('30N', '10N', '60E', '100E')
+            ('30N', '10N', '60E', '100E'). area keyword always supersede
+            centre, radius combination.
+
+        centre : sequence of str, optional
+            Centre is used to specify the coordinates of the centre of a
+            circular area for which observations will be returned. It is used
+            in conjunction with the radius keyword. Centre is given in
+            (lat<N|S>, lon<E|W>) format.
+
+        constrain : dict
+            Constrain extraction based on dict key/value. For example, to
+            constrain extraction for Aqua MODIS (sat id 784), use
+            `constrain={'STLT_IDNY': 784}`
 
         ddict : str, optional
             This can be used to specify a user-supplied data dictionary to be
             used for retrievals. Some specific subtypes and most data on test
             server use the following format
             '\"/path/to/tests/``subtype``/retrieval_table\"'
-
-        platform : str, optional
-            Specify Platform ID when required (e.g. for buoy data)
-
-        select : str, optional
-            This keyword specifies which of the two products (channel groups)
-            to retrieve observations for, as follows:
-            "1" for 9 low-frequency channels (up to 89GHz);
-            "2" for 4 high-frequency channels (166 and 183GHz).
-            Use only with subtypes offering this option.
-
-        over : str, optional
-            This keyword can be used to select those observations over the
-            "land" or "sea".
-
-        merged : bool, optional
-            This is required to retrieve merged data. Use only with subtypes
-            offering this option.
 
         hostname : str, optional
             The hostname of the MetDB RPC server (default None which points to
@@ -201,10 +199,33 @@ class Query(object):
             Note that this option has no effect on extract() method which
             always sends a new request to MetDB at each call.
 
-        constrain : dict
-            Constrain extraction based on dict key/value. For example, to
-            constrain extraction for Aqua MODIS (sat id 784), use
-            `constrain={'STLT_IDNY': 784}`
+        merged : bool, optional
+            This is required to retrieve merged data. Use only with subtypes
+            offering this option.
+
+        over : str, optional
+            This keyword can be used to select those observations over the
+            "LAND" or "SEA".
+
+        platform : str, optional
+            Specify Platform ID when required (e.g. for buoy data)
+
+        radius : None, optional
+            Radius is used to specify the radius, in KM, of a circular area
+            for which observations will be returned. It is used in conjunction
+            with the centre keyword.
+
+        select : str, optional
+            This keyword specifies which of the two products (channel groups)
+            to retrieve observations for, as follows:
+            "1" for 9 low-frequency channels (up to 89GHz);
+            "2" for 4 high-frequency channels (166 and 183GHz).
+            Use only with subtypes offering this option.
+
+        start, stop : str, optional
+            Cut-off start and stop times. Default TODAY-1/0000Z, TODAY-1/0600Z.
+            The start and stop values accepts datetime in `%Y%m%d/%H%MZ` format
+
         """
         self.subtype = subtype
         self.constrain = constrain
@@ -226,6 +247,10 @@ class Query(object):
             self.keywords += ['PLATFORM ' + platform]
         if select:
             self.keywords += ['SELECT ' + str(select)]
+        if centre:
+            self.keywords += ['CENTRE ' + ' '.join(centre)]
+        if radius:
+            self.keywords += ['RADIUS ' + str(radius)]
 
         # update elements list
         if isinstance(elements, str):

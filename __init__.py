@@ -1,8 +1,8 @@
 """
 A general purpose Python library for satellite/model data display.
 """
-from . import mdbx, mplconfigx, geo, rpole_util, aeronetx, sdf, stats, utils
-from .utils import log
+# from . import mdbx, mplconfigx, geo, rpole_util, aeronetx, sdf, stats, utils
+# from .utils import log
 
 __version__ = "1.0.1"
 __version_info__ = (1, 0, 1, 'candidate', 0)

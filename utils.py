@@ -18,6 +18,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.cm as mpl_cm
 import collections
+import time
 from sys import platform
 from netCDF4 import Dataset
 from datetime import date, datetime, timedelta
@@ -48,6 +49,7 @@ log.basicConfig(
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
+_tstart_stack = []  # forf tic2() toc2()
 
 
 class Convert(object):
@@ -227,6 +229,37 @@ class List(list):
     def __call__(self, **kwargs):
         self.__dict__.update(kwargs)
         return self
+
+
+class Timer(object):
+    """A timer class to measure elapsed time as a context manager"""
+
+    def __init__(self, name=None):
+        """Summary
+
+        Parameters
+        ----------
+        name : str, optional
+            String to identify the process in output.
+
+        Example
+        -------
+        >>> with Timer('foo'):
+        >>>     code block
+        [foo]
+        Elapsed: 00:00:08
+
+        """
+        self.name = name
+
+    def __enter__(self):
+        self.tstart = time.monotonic()
+
+    def __exit__(self, type, value, traceback):
+        if self.name:
+            print('[{}]'.format(self.name), end='', flush=True)
+        tdiff = time.gmtime(time.monotonic() - self.tstart)
+        print(' Elapsed time: {}'.format(time.strftime("%H:%M:%S", tdiff)))
 
 
 class XYZ(object):
@@ -2178,6 +2211,42 @@ def seqdate(start_date, end_date, in_fmt='%Y-%m-%d', out_fmt='%Y%m%d'):
     delta = d2 - d1
     return [(d1 + timedelta(days=i)).strftime(out_fmt) for
             i in range(delta.days + 1)]
+
+
+def tic():
+    global _tstart
+    try:
+        _tstart = time.monotonic()
+    except AttributeError:
+        _tstart = time.time()
+
+
+def toc(fmt="Elapsed: %0.3f s"):
+    if '_tstart' in globals():
+        try:
+            print(fmt % (time.monotonic() - _tstart))
+        except AttributeError:
+            print(fmt % (time.time() - _tstart))
+        del globals()['_tstart']
+    else:
+        print("toc: start time not set")
+
+
+def tic2():
+    try:
+        _tstart_stack.append(time.monotonic())
+    except AttributeError:
+        _tstart_stack.append(time.time())
+
+
+def toc2(fmt="Elapsed: %0.3f s"):
+    try:
+        try:
+            print(fmt % (time.monotonic() - _tstart_stack.pop()))
+        except AttributeError:
+            print(fmt % (time.time() - _tstart_stack.pop()))
+    except IndexError:
+        print("toc: start time not set")
 
 
 def transform_basemap_coord(lon, lat, to_proj):

@@ -3,8 +3,10 @@ import os
 from ypylib import mdbx
 
 
-def plot_sataod(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
-                constrain=None, **kw):
+def plot_sataod(
+    ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None, constrain=None,
+    **kw
+):
     """Plot MODIS AOD."""
     q = mdbx.Query('SATAOD', ELEMENT, area=AREA,
                    start=START, stop=STOP,
@@ -91,8 +93,10 @@ def plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-07'):
     # plt.show()
 
 
-def plot_sataod_test(ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None,
-                     constrain=None, **kw):
+def plot_sataod_test(
+    ELEMENT='AOD_NM550', AREA=None, START=None, STOP=None, constrain=None,
+    **kw
+):
     """Plot MODIS AOD from mdb-test server."""
     q = mdbx.Query('SATAOD', [ELEMENT, 'STLT_IDNY'], area=AREA,
                    start=START, stop=STOP,
@@ -244,8 +248,10 @@ def plot_ascat_mergde_model_field():
     req.plot(MERGED_FIELD, **plot_kw)
 
 
-def plot_argo(subtype='ARGOB', elements=(('SALNY',), 100), platform='029',
-              start='20180121/0000Z', stop='20180121/1559Z'):
+def plot_argo(
+    subtype='ARGOB', elements=(('SALNY',), 100), platform='029',
+    start='20180121/0000Z', stop='20180121/1559Z'
+):
     """
     Extract salinity profiles from ARGO buoy observation network data
 
@@ -271,9 +277,11 @@ def plot_argo(subtype='ARGOB', elements=(('SALNY',), 100), platform='029',
              plt_type='scatter', show=True, valid_min=10, map_buffer=5)
 
 
-def plot_atdnet(subtype='ATDNET', elements='LGHN_STRK',
-                area=['40N', '0N', '60E', '100E'],
-                start='20190112/0000Z', stop='20190210/2300Z'):
+def plot_atdnet(
+    subtype='ATDNET', elements='LGHN_STRK',
+    area=['40N', '0N', '60E', '100E'],
+    start='20190112/0000Z', stop='20190210/2300Z'
+):
     req = mdbx.Query(subtype, elements, start=start, stop=stop, area=area,
                      keep=True)
     req.plot(elements, plt_type='scatter', s_marker='+', s_lw=0.1,
@@ -493,5 +501,6 @@ if __name__ == "__main__":
     #     plot_sataod_india_covid19(mmmdd=d)
 
     # plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
-
+    plt = plot_sataod(use_cartopy=False)
+    plt.show()
     pass
