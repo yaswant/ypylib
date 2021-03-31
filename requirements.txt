@@ -1,1 +1,12 @@
+Cartopy (or Basemap from mpl_toolkits)
+h5py
+iris
+matplotlib
+netCDF4
 numpy
+pandas
+scipy
+Tkinter (Python 2) /tkinter (Python 3)
+builtins
+past
+future

@@ -111,4 +111,3 @@ if __name__ == "__main__":
 
     print(divergence(u, v, 1, 1))
     # print(divergence(u, v, 0.5))
-
