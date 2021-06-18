@@ -46,6 +46,7 @@ log.basicConfig(
     datefmt='%F %T', level=log.INFO)
 # To log debug messages, call
 # >>> log.getLogger().setLevel(log.DEBUG)
+from packaging import version
 
 __version__ = "1.0"
 __author__ = "Yaswant Pradhan"
@@ -935,14 +936,22 @@ class XYZ(object):
 
             ax.coastlines(lw=0.5, resolution=mres, zorder=lm_zorder + 3)
 
-            if proj_name in ('PlateCarree', 'Mercator'):
+            if version.parse(cartopy.__version__) > version.parse('0.17.0'):
                 gl = ax.gridlines(draw_labels=True, **gl_kw)
-                gl.xlabels_top, gl.ylabels_right = False, False
+                gl.top_labels, gl.right_labels = False, False
                 gl.xformatter = LONGITUDE_FORMATTER
                 gl.yformatter = LATITUDE_FORMATTER
                 gl.xlabel_style, gl.ylabel_style = font_kw, font_kw
+
             else:
-                ax.gridlines(**gl_kw)
+                if proj_name in ('PlateCarree', 'Mercator'):
+                    gl = ax.gridlines(draw_labels=True, **gl_kw)
+                    gl.xlabels_top, gl.ylabels_right = False, False
+                    gl.xformatter = LONGITUDE_FORMATTER
+                    gl.yformatter = LATITUDE_FORMATTER
+                    gl.xlabel_style, gl.ylabel_style = font_kw, font_kw
+                else:
+                    ax.gridlines(**gl_kw)
 
         else:  # ------------------------------------------------- use Basemap
 

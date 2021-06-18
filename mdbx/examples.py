@@ -1,6 +1,7 @@
 """Demonstration of direct plotting of from MetDB using mdbx"""
 import os
 from ypylib import mdbx
+import cartopy.crs as ccrs
 
 
 def plot_sataod(
@@ -198,15 +199,15 @@ def plot_wow_air_temp():
     """Plot WOW surface air temperature."""
     SUBTYPE = 'WOW'
     ELEMENTS = 'SRFC_AIR_TMPR'
-    AREA = ['63N', '49N', '12W', '4E']
+    AREA = ['63N', '49N', '11W', '3E']
 
-    q = mdbx.Query(SUBTYPE, ELEMENTS, area=AREA)
-    return q.plot(
-        ELEMENTS, delta=(0.2, 0.2), cmap='viridis', cb_on=True,
-        use_cartopy=True, map_res='h',
-        gspacing=(4, 4),
-        describe_data=True,
-        vmin=270, vmax=290)
+    kw_query = dict(area=AREA, start='TODAY-1/0830Z', stop='TODAY-1/0900Z')
+    kw_plot = dict(projection=ccrs.Robinson(), delta=(0.2, 0.2),
+                   cmap='viridis', cb_on=True, use_cartopy=True, map_res='h',
+                   gspacing=(4, 4), describe_data=True, vmin=270, vmax=290)
+
+    q = mdbx.Query(SUBTYPE, ELEMENTS, **kw_query)
+    return q.plot(ELEMENTS, **kw_plot)
 
 
 def plot_ascat_mergde_model_field():
@@ -491,7 +492,7 @@ if __name__ == "__main__":
     # plot_atdnet(start='TODAY-1/0000Z', stop='TODAY/0000Z')
     # plot_argo()
     # plot_ascat_mergde_model_field()
-    # plot_wow_air_temp().show()
+    plot_wow_air_temp().show()
     # plot_sataod_india_dust().show()
     # plot_crete_dust().show()
     # plot_msgradfd_geo().show()
@@ -501,6 +502,6 @@ if __name__ == "__main__":
     #     plot_sataod_india_covid19(mmmdd=d)
 
     # plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
-    plt = plot_sataod(use_cartopy=False)
-    plt.show()
+    # plt = plot_sataod(use_cartopy=False).show()
+
     pass
