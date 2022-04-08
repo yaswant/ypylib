@@ -143,8 +143,7 @@ def plot_msgradfd_geo():
     return req.plot(
         ELEMENT, use_cartopy=True,
         projection=ccrs.Geostationary(),
-        delta=(.5, .5),
-        globe=True, cb_on=True,)
+        delta=(.5, .5), cb_on=True, describe_data=True)
 
 
 def plot_sataod_india_dust():
@@ -195,8 +194,8 @@ def plot_crete_dust():
     return plt
 
 
-def plot_wow_air_temp():
-    """Plot WOW surface air temperature."""
+# def plot_wow_air_temp():
+    # """Plot WOW surface air temperature."""
     SUBTYPE = 'WOW'
     ELEMENTS = 'SRFC_AIR_TMPR'
     AREA = ['63N', '49N', '11W', '3E']
@@ -278,7 +277,7 @@ def plot_argo(
              plt_type='scatter', show=True, valid_min=10, map_buffer=5)
 
 
-def plot_atdnet(
+def plot_atdnet_India(
     subtype='ATDNET', elements='LGHN_STRK',
     area=['40N', '0N', '60E', '100E'],
     start='20190112/0000Z', stop='20190210/2300Z'
@@ -489,13 +488,13 @@ def plot_viirs_aod():
 
 
 if __name__ == "__main__":
-    # plot_atdnet(start='TODAY-1/0000Z', stop='TODAY/0000Z')
+    # plot_atdnet_India(start='TODAY-1/0000Z', stop='TODAY/0000Z')
     # plot_argo()
     # plot_ascat_mergde_model_field()
-    plot_wow_air_temp().show()
+    # plot_wow_air_temp().show()
     # plot_sataod_india_dust().show()
     # plot_crete_dust().show()
-    # plot_msgradfd_geo().show()
+    plot_msgradfd_geo().show()
 
     # for d in ('Apr-02', 'Apr-03', 'Apr-04', 'Apr-05', 'Apr-06',
     #           'Apr-07', 'Apr-08'):

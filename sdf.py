@@ -559,7 +559,7 @@ h5_parse = h5Parse
 if __name__ == '__main__':
     pass
     h4file = os.path.expandvars(
-        '$SCRATCH/61/MYD04_L2/Recent/MYD04_L2.A2019079.1545.061.NRT.hdf')
+        '$SCRATCH/61/MYD04_L2/Recent/MYD04_L2.A2022075.0900.061.2022075135025.NRT.hdf')
     h4 = h4Parse(h4file)
     x = h4.get_sds(['Deep_Blue_Number_Pixels_Used_550_Land', 'Solar_Zenith'])
     print(list(x.keys()))

@@ -5,6 +5,7 @@ environment.yml
 # ide files
 .project
 .pydevproject
+.vscode
 
 # temp files
 *~

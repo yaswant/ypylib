@@ -537,16 +537,10 @@ def nrand(n=5, low=1, high=49):
 
 
 def main():
-    pass
-    # from ypylib.utils import doy
-    # from ypylib.geo import ll_vec2arr
-    # print doy(day=1, month=3, year=2000)
-    # print doy(2013, 10, 10)
-    # xv = np.arange(10)
-    # yv = np.arange(5)
-    # xx, yy = ll_vec2arr(xv, yv)
-    # print xx.shape, yy.shape
-    # print xx, yy
+    from ypylib.utils import doy
+    import numpy as np
+    assert doy(day=1, month=3, year=2000) == 61, "doy assertion failed."
+    assert doy(2013, 10, 10) == 283, "doy assertion failed."
 
 
 if __name__ == '__main__':
