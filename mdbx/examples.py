@@ -138,7 +138,7 @@ def plot_msgradfd_geo():
         SUBTYPE, ELEMENT,
         area=['67N', '67S', '67W', '67E'],  # must specify
         start='TODAY-1/1000Z',
-        stop='TODAY-1/1230Z', keep=True)
+        stop='TODAY-1/1030Z', keep=True)
 
     return req.plot(
         ELEMENT, use_cartopy=True,
@@ -194,7 +194,7 @@ def plot_crete_dust():
     return plt
 
 
-# def plot_wow_air_temp():
+def plot_wow_air_temp():
     # """Plot WOW surface air temperature."""
     SUBTYPE = 'WOW'
     ELEMENTS = 'SRFC_AIR_TMPR'
@@ -488,19 +488,19 @@ def plot_viirs_aod():
 
 
 if __name__ == "__main__":
-    # plot_atdnet_India(start='TODAY-1/0000Z', stop='TODAY/0000Z')
+    plot_atdnet_India(start='TODAY-1/0000Z', stop='TODAY/0000Z')
     # plot_argo()
     # plot_ascat_mergde_model_field()
     # plot_wow_air_temp().show()
     # plot_sataod_india_dust().show()
     # plot_crete_dust().show()
-    plot_msgradfd_geo().show()
+    # plot_msgradfd_geo().show()
 
     # for d in ('Apr-02', 'Apr-03', 'Apr-04', 'Apr-05', 'Apr-06',
     #           'Apr-07', 'Apr-08'):
     #     plot_sataod_india_covid19(mmmdd=d)
 
     # plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
-    # plt = plot_sataod(use_cartopy=False).show()
+    # plt = plot_sataod(use_cartopy=True).show()
 
     pass
