@@ -488,7 +488,7 @@ def plot_viirs_aod():
 
 
 if __name__ == "__main__":
-    plot_atdnet_India(start='TODAY-1/0000Z', stop='TODAY/0000Z')
+    # plot_atdnet_India(start='TODAY-1/0000Z', stop='TODAY/0000Z')
     # plot_argo()
     # plot_ascat_mergde_model_field()
     # plot_wow_air_temp().show()
@@ -502,5 +502,10 @@ if __name__ == "__main__":
 
     # plot_sataod_india_covid19(year_ref='2019', mmmdd='Apr-09')
     # plt = plot_sataod(use_cartopy=True).show()
+
+    # plot viirs
+    plt = plot_sataod(constrain={'STLT_IDNY': 224},
+                      # plt_type='scatter', s_marker='.',
+                      use_cartopy=False, globe=True).show()
 
     pass
