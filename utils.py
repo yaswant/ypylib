@@ -1728,8 +1728,9 @@ def get_public_methods(class_name):
     tuple
         available public method names
     """
-    return list(zip(*inspect.getmembers(
-        class_name, predicate=inspect.ismethod)))[0][1:]
+    return [method for method in dir(class_name)
+            if not method.startswith('__') and
+            callable(getattr(class_name, method))]
 
 
 def ll_parse(ll_string):
