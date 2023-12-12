@@ -408,6 +408,99 @@ def plot_viirs_aod():
     )
     q.plot('AOD_NM550', use_cartopy=False, show=True)
 
+
+def plot_fciraduk():
+    SUBTYPE = 'FCIRADUK'
+    PLATFORM = '71'
+    ELEMENTS = ['STLT_IDNY',
+                'STLT_ZNTH_ANGL',
+                'CLOD_AMNT',
+                'CLOD_TOP_TMPR',
+                (('PESR_LOWR_LAYR',), 2),
+                (('CSR_BRGTS_TMPR',), 16)]
+    AREA = ['10.83N', '7.23S', '10.81W', '8.70E']
+    START, STOP = '20170920/1130Z', '20170920/1230Z'
+
+    # -- FCI elements were not available at the time of this test,
+    # -- so copied from MSGRADUK here as an example
+    FCI_dict = {'FCIRADUK': {
+        u'STLT_IDNY': 'i4',  # Satellite Identifier
+        u'ORGNG_GNRTG_CNTR': 'i4',  # Originating Centre
+        u'STLT_CLAS': 'i4',  # Satellite classification
+        u'NADR_SGMT_SIZE_X': 'f4',  # Segment size at nadir (x-dir)
+        u'NADR_SGMT_SIZE_Y': 'f4',  # Segment size at nadir (y-dir)
+        u'YEAR': 'i4',  # Year
+        u'MNTH': 'i4',  # Month
+        u'DAY': 'i4',  # Day
+        u'HOUR': 'i4',  # Hour
+        u'MINT': 'i4',  # Minute
+        u'SCND': 'i4',  # Second
+        u'RCPT_YEAR': 'i4',  # Time of receipt year
+        u'RCPT_MNTH': 'i4',  # Time of receipt month
+        u'RCPT_DAY': 'i4',  # Time of receipt day
+        u'RCPT_HOUR': 'i4',  # Time of receipt hour
+        u'RCPT_MINT': 'i4',  # Time of receipt minute
+        u'LTTD': 'f4',  # Latitude
+        u'LNGD': 'f4',  # Longitude
+        u'PIXL_NMBR_ROW': 'i4',  # Number of pixels per row
+        u'PIXL_NMBR_CLMN': 'i4',  # Number of pixels    per column
+        u'SRFC_TYPE': 'i4',  # Land/Sea qualifier
+        u'STLT_ZNTH_ANGL': 'f4',  # Satellite zenith angle
+        u'SOLR_ZNTH_ANGL': 'f4',  # Solar  zenith angle
+        u'STLT_HGHT': 'f4',  # Satellite height
+        u'CLOD_FRCN_CNTR_FRQY': 'f4',  # Channel central frequency
+        u'CLOD_FRCN_BAND_WIDH': 'f4',  # Channel band width
+        u'CLOD_FRCN_COVRD': 'f4',  # Fraction of segment cloud-covered
+        u'CLOD_FRCN_CLER': 'f4',  # Fraction of segment cloud-free
+        u'CLOD_TYPE': 'i4',  # Cloud type
+        u'HUMDY_STLT_INST': 'i4',  # Satellite processing instrument
+        u'HUMDY_CMPN_MTHD': 'i4',  # Humidity computation method
+        u'PESR_LOWR_LAYR': 'f4',  # Lower layer pressure
+        u'PESR_UPPR_LAYR': 'f4',  # Upper layer pressure
+        u'LAYR_RLTV_HUMDY': 'f4',  # Layer Relative humidity
+        u'CSR_STLT_INST': 'i4',  # Satellite processing instrument
+        u'CSR_RDNC_TYPE': 'i4',  # Radiance type
+        u'CSR_RDNC_MTHD': 'i4',  # Radiance method
+        u'CSR_CNTR_FRQY': 'f4',  # Channel central frequency
+        u'CSR_BAND_WIDH': 'f4',  # Channel band width
+        u'CSR_SPCL_RDNC': 'f4',  # Spectral radiance (W·sr−1·m−3)
+        u'CSR_RDNC': 'f4',  # Radiance (W·sr−1·m−2)
+        u'CSR_BRGTS_TMPR': 'f4',  # Brightness temperature
+        u'CLOD_TOP_TMPR': 'f4',  # Cloud top temperature
+        u'CLOD_AMNT': 'f4',  # Cloud amount
+        u'PIXL_TYPE': 'i4',  # Pixel type
+    }}
+
+    mdbx.subtypes.DTYPE_MAPS.update(FCI_dict)
+
+    req = mdbx.Query(SUBTYPE, ELEMENTS,
+                     area=AREA, start=START, stop=STOP,
+                     platform=PLATFORM,
+                     hostname='mdb-test')
+
+    # -- note the RPOLE keyword which is important here
+    req.keywords += ['RPOLE  37.50N 177.50E',
+                     'RECEIVED BETWEEN 19700101/0001Z AND 20360924/2239Z']
+
+    print(req.keywords)
+    print(req.elements)
+
+    # -- extract data
+    # data = req.extract()
+    # print(data['CSR_BRGTS_TMPR'])
+
+    # -- plot data
+    # -- mdbx/XYZ doesnot support plotting data on rotated-pole grid, so the
+    # -- lat lon limits used for mdb extract maybe incorrectly set as
+    # -- plot extent. avoid this by setting globe=True
+    #
+    req.plot('CSR_BRGTS_TMPR',
+             index=3,  # channel index
+             delta=(0.1, 0.1),  # output resolution in degrees
+             globe=True,  # set map extent to show full globe
+             show=True)  # show plot
+
+
 # req = Query('MWHS', 'STLT_IDNY', start='20190621/1300Z')
 # print(req.extract())
 
@@ -504,8 +597,16 @@ if __name__ == "__main__":
     # plt = plot_sataod(use_cartopy=True).show()
 
     # plot viirs
-    plt = plot_sataod(constrain={'STLT_IDNY': 224},
-                      # plt_type='scatter', s_marker='.',
-                      use_cartopy=False, globe=True).show()
+    # plt = plot_sataod(constrain={'STLT_IDNY': 224},
+    #                   # plt_type='scatter', s_marker='.',
+    #                   use_cartopy=False, globe=True).show()
+
+    plt = plot_sataod(START='20230903/0000Z',
+                      STOP='20230903/2359Z',
+                      constrain={'STLT_IDNY': 224},
+                      describe_data=True,
+                      # plt_type='scatter', s_marker=',',
+                      use_cartopy=True,
+                      globe=True).show()
 
     pass
