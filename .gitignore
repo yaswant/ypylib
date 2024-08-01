@@ -1,5 +1,6 @@
 # python ignores
-*.py[co]
+*.py[cod]
+__pycache__/
 environment.yml
 
 # ide files
@@ -16,8 +17,11 @@ environment.yml
 # OS files
 \.DS_Store
 .cache/
-__pycache__/
 
 # Egg that gets created with 'pip install -v -e .'
 *.egg-info/
-.eggs/
+eggs/
+*.egg
+
+# Sphinx doc builds
+docs/_build/
