@@ -119,7 +119,7 @@ def smooth(x, window_len=11, window='hanning'):
 
 
 def running_mean(x, N):
-    """Calaulcte running average from a series (x) using a window size (N).
+    """Calculate running average from a series (x) using a window size (N).
 
     Parameters
     ----------

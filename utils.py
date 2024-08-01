@@ -78,11 +78,11 @@ class Convert(object):
         return self.value * 0.3048 / 1e3
 
     def kt2mph(self):
-        """Knotts to miles-per-hour"""
+        """Knots to miles-per-hour"""
         return self.value * 1.15077945
 
     def mph2kt(self):
-        """Miles-per-hour to Knotts"""
+        """Miles-per-hour to Knots"""
         return self.value / 1.15077945
 
     def kg2lb(self):
@@ -94,11 +94,11 @@ class Convert(object):
         return self.value / 2.20462262
 
     def f2c(self):
-        """Fahrenheits to Celcius"""
+        """Fahrenheit to Celsius"""
         return (self.value - 32) / 1.8
 
     def c2f(self):
-        """Celcius to Fahrenheits"""
+        """Celsius to Fahrenheit"""
         return self.value * 1.8 + 32
 
     def solzen2airmass(self):
