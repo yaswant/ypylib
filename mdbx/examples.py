@@ -146,6 +146,23 @@ def plot_msgradfd_geo():
         delta=(.5, .5), cb_on=True, describe_data=True)
 
 
+# def plot_abicsr_geo():
+#     """MSG Cloud Top Temperature Full Disc."""
+#     import cartopy.crs as ccrs
+#     SUBTYPE = 'ABICSR'
+#     ELEMENT = (('CSR_SPCL_RDNC',), 12)
+#     req = mdbx.Query(
+#         SUBTYPE, ELEMENT,
+#         area=['67N', '67S', '170W', '15W'],  # must specify
+#         start='TODAY-2/1800Z',
+#         stop='TODAY-2/1830Z', keep=True)
+
+#     return req.plot(
+#         ELEMENT, index=3, use_cartopy=True,
+#         projection=ccrs.Geostationary(),
+#         delta=(.5, .5), cb_on=True, describe_data=True)
+
+
 def plot_sataod_india_dust():
     """SATAOD India dust case"""
     plt = plot_sataod(  # use_cartopy=True, map_res='h',
@@ -588,6 +605,7 @@ if __name__ == "__main__":
     # plot_sataod_india_dust().show()
     # plot_crete_dust().show()
     # plot_msgradfd_geo().show()
+    plot_abicsr_geo().show()
 
     # for d in ('Apr-02', 'Apr-03', 'Apr-04', 'Apr-05', 'Apr-06',
     #           'Apr-07', 'Apr-08'):
@@ -601,12 +619,12 @@ if __name__ == "__main__":
     #                   # plt_type='scatter', s_marker='.',
     #                   use_cartopy=False, globe=True).show()
 
-    plt = plot_sataod(START='20230903/0000Z',
-                      STOP='20230903/2359Z',
-                      constrain={'STLT_IDNY': 224},
-                      describe_data=True,
-                      # plt_type='scatter', s_marker=',',
-                      use_cartopy=True,
-                      globe=True).show()
+    # plt = plot_sataod(START='20230903/0000Z',
+    #                   STOP='20230903/2359Z',
+    #                   constrain={'STLT_IDNY': 224},
+    #                   describe_data=True,
+    #                   # plt_type='scatter', s_marker=',',
+    #                   use_cartopy=True,
+    #                   globe=True).show()
 
     pass
