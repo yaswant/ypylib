@@ -160,7 +160,7 @@ class h4Parse(object):
         return vdata
 
     def get_scaled(self, fieldnames=[]):
-        """Return scaled data asuming that scale_factor and add_offset are
+        """Return scaled data assuming that scale_factor and add_offset are
         available in dataset attributes.
 
         Not a general purpose method, so should be used with caution.
@@ -390,7 +390,7 @@ class h5Parse(object):
         --------
         >>> h5 = h5_parse(h5file)
         >>> dataset_list = h5.get_dslist()  # (old) OR
-        >>> dataset_list = h5.datasets  # (prefered)
+        >>> dataset_list = h5.datasets  # (preferred)
 
         # Or in one line
         >>> dataset_list = h5_parse(h5file).get_dslist()

@@ -7,7 +7,6 @@ import socket
 
 __version__ = "0.1"
 __author__ = "Yaswant Pradhan"
-__copyright__ = "(c) Crown copyright 2019, the Met Office."
 
 
 def load():
@@ -30,7 +29,7 @@ def load():
         if 'spice' in socket.gethostname() or os.getenv('DISPLAY') is None:
             plt.switch_backend('Agg')
 
-    # -- avoid backend confilct
+    # -- avoid backend conflict
     plt.rcParams["backend_fallback"] = True
 
     # -- custom fonts (ttf, afm), grid, axes, ticks, etc
